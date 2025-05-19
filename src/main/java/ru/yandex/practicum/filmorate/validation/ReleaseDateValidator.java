@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.validation;
 
-import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
 
 import java.time.LocalDate;
 
