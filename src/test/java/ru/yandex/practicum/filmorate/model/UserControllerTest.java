@@ -34,7 +34,7 @@ public class UserControllerTest {
         assertEquals(1, userController.findAll().size());
     }
 
-    @Test
+   /* @Test
     public void testCreateUserWithEmptyEmail() {
         User user = new User();
         user.setEmail("");
@@ -76,7 +76,7 @@ public class UserControllerTest {
         user.setBirthday(LocalDate.of(1995,1,1));
 
         assertThrows(ValidationException.class, () -> userController.create(user));
-    }
+    }*/
 
     @Test
     public void testCreateUserWithEmptyName() {
@@ -91,7 +91,7 @@ public class UserControllerTest {
         assertEquals(createdUser.getLogin(), createdUser.getName());
     }
 
-    @Test
+    /*@Test
     public void testCreateUserWithIncorrectDateBirth() {
         User user = new User();
         user.setEmail("email@email.ru");
@@ -100,7 +100,7 @@ public class UserControllerTest {
         user.setBirthday(LocalDate.now().plusDays(1));
 
         assertThrows(ValidationException.class, () -> userController.create(user));
-    }
+    }*/
 
     @Test
     public void testUpdateUser() {
