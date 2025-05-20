@@ -13,7 +13,6 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Set;
 
 public class UserControllerTest {
