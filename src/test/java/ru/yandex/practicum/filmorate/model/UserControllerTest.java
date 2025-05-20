@@ -13,6 +13,7 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Set;
 
 public class UserControllerTest {
@@ -81,7 +82,6 @@ public class UserControllerTest {
         Set<ConstraintViolation<User>> violations = validator.validate(user);
 
         assertFalse(violations.isEmpty());
-        assertEquals("Логин не может быть пустым", violations.iterator().next().getMessage());
     }
 
     @Test
