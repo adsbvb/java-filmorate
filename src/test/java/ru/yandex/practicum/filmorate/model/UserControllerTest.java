@@ -1,5 +1,9 @@
 package ru.yandex.practicum.filmorate.model;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.UserController;
@@ -9,14 +13,18 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 public class UserControllerTest {
 
     UserController userController;
+    private Validator validator;
 
     @BeforeEach
     public void setUp() {
         userController = new UserController();
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
     }
 
     @Test
@@ -34,7 +42,7 @@ public class UserControllerTest {
         assertEquals(1, userController.findAll().size());
     }
 
-   /* @Test
+    @Test
     public void testCreateUserWithEmptyEmail() {
         User user = new User();
         user.setEmail("");
@@ -42,7 +50,10 @@ public class UserControllerTest {
         user.setName("name");
         user.setBirthday(LocalDate.of(1995,1,1));
 
-        assertThrows(ValidationException.class, () -> userController.create(user));
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+
+        assertFalse(violations.isEmpty());
+        assertEquals("Электронная почта не может быть пустой", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -53,7 +64,10 @@ public class UserControllerTest {
         user.setName("name");
         user.setBirthday(LocalDate.of(1995,1,1));
 
-        assertThrows(ValidationException.class, () -> userController.create(user));
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+
+        assertFalse(violations.isEmpty());
+        assertEquals("Некорректный адрес электронной почты", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -64,7 +78,10 @@ public class UserControllerTest {
         user.setName("name");
         user.setBirthday(LocalDate.of(1995,1,1));
 
-        assertThrows(ValidationException.class, () -> userController.create(user));
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+
+        assertFalse(violations.isEmpty());
+        assertEquals("Логин не может быть пустым", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -75,8 +92,11 @@ public class UserControllerTest {
         user.setName("name");
         user.setBirthday(LocalDate.of(1995,1,1));
 
-        assertThrows(ValidationException.class, () -> userController.create(user));
-    }*/
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+
+        assertFalse(violations.isEmpty());
+        assertEquals("Логин не должен содержать пробелы", violations.iterator().next().getMessage());
+    }
 
     @Test
     public void testCreateUserWithEmptyName() {
@@ -91,7 +111,7 @@ public class UserControllerTest {
         assertEquals(createdUser.getLogin(), createdUser.getName());
     }
 
-    /*@Test
+    @Test
     public void testCreateUserWithIncorrectDateBirth() {
         User user = new User();
         user.setEmail("email@email.ru");
@@ -99,8 +119,11 @@ public class UserControllerTest {
         user.setName("name");
         user.setBirthday(LocalDate.now().plusDays(1));
 
-        assertThrows(ValidationException.class, () -> userController.create(user));
-    }*/
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+
+        assertFalse(violations.isEmpty());
+        assertEquals("Дата рождения не может быть в будущем", violations.iterator().next().getMessage());
+    }
 
     @Test
     public void testUpdateUser() {

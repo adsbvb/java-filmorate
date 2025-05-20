@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
+import jakarta.validation.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.FilmController;
@@ -9,14 +10,18 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 public class FilmControllerTest {
 
     private FilmController filmController;
+    private Validator validator;
 
     @BeforeEach
     public void setUp() {
         filmController = new FilmController();
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
     }
 
     @Test
@@ -35,7 +40,7 @@ public class FilmControllerTest {
         assertTrue(filmController.findAll().contains(createdFilm));
     }
 
-    /*@Test
+    @Test
     public void testCreateFilmWithEmptyName() {
         Film film = new Film();
         film.setName("");
@@ -43,7 +48,10 @@ public class FilmControllerTest {
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(240);
 
-        assertThrows(ValidationException.class, () -> filmController.create(film));
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+
+        assertFalse(violations.isEmpty());
+        assertEquals("Название не может быть пустым", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -54,7 +62,10 @@ public class FilmControllerTest {
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(240);
 
-        assertThrows(ValidationException.class, () -> filmController.create(film));
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+
+        assertFalse(violations.isEmpty());
+        assertEquals("Максимальная длина описания — 200 символов", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -66,7 +77,10 @@ public class FilmControllerTest {
         film.setReleaseDate(cinemaBirthday.minusDays(1));
         film.setDuration(240);
 
-        assertThrows(ValidationException.class, () -> filmController.create(film));
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+
+        assertFalse(violations.isEmpty());
+        assertEquals("Дата релиза — не раньше 28 декабря 1895 года", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -77,8 +91,11 @@ public class FilmControllerTest {
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(0);
 
-        assertThrows(ValidationException.class, () -> filmController.create(film));
-    }*/
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+
+        assertFalse(violations.isEmpty());
+        assertEquals("Продолжительность фильма должна быть положительным числом", violations.iterator().next().getMessage());
+    }
 
     @Test
     public void testUpdateFilm() {
