@@ -39,7 +39,7 @@ public class FilmService {
     }
 
     public void likeFilm(Long filmId, Long userId) {
-        Film film = filmStorage.getFilmById(filmId).orElseThrow(()-> new NotFoundException("Фильм с id=" + filmId + " не найден."));
+        Film film = filmStorage.getFilmById(filmId).orElseThrow(() -> new NotFoundException("Фильм с id=" + filmId + " не найден."));
         if (userStorage.getUserById(userId).isEmpty()) {
             throw new NotFoundException("Пользователь с id=" + userId + "не найден.");
         }
@@ -48,7 +48,7 @@ public class FilmService {
     }
 
     public void unlikeFilm(Long filmId, Long userId) {
-        Film film = filmStorage.getFilmById(filmId).orElseThrow(()-> new NotFoundException("Фильм с id=" + filmId + " не найден."));
+        Film film = filmStorage.getFilmById(filmId).orElseThrow(() -> new NotFoundException("Фильм с id=" + filmId + " не найден."));
         if (!film.getLikedBy().contains(userId)) {
             throw new NotFoundException("Пользователь с id=" + userId + " в списке лайков не найден.");
         }
