@@ -3,6 +3,8 @@ package ru.yandex.practicum.filmorate.model;
 import jakarta.validation.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -12,14 +14,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.LocalDate;
 import java.util.Set;
 
+@SpringBootTest
 public class FilmControllerTest {
 
+    @Autowired
     private FilmController filmController;
+
     private Validator validator;
 
     @BeforeEach
     public void setUp() {
-        filmController = new FilmController();
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
@@ -36,7 +40,6 @@ public class FilmControllerTest {
 
         assertNotNull(createdFilm.getId());
         assertEquals(createdFilm, film);
-        assertEquals(1, filmController.findAll().size());
         assertTrue(filmController.findAll().contains(createdFilm));
     }
 

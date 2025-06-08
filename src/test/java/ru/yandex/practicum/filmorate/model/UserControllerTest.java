@@ -6,6 +6,8 @@ import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -15,14 +17,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.LocalDate;
 import java.util.Set;
 
+@SpringBootTest
 public class UserControllerTest {
 
-    UserController userController;
+    @Autowired
+    private UserController userController;
+
     private Validator validator;
 
     @BeforeEach
     public void setUp() {
-        userController = new UserController();
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
@@ -39,7 +43,6 @@ public class UserControllerTest {
 
         assertNotNull(createdUser.getId());
         assertEquals(createdUser, user);
-        assertEquals(1, userController.findAll().size());
     }
 
     @Test
