@@ -19,12 +19,12 @@ public class FilmController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Film> findFilm(@PathVariable("id") Long filmId) {
+    public Film findFilm(@PathVariable("id") Long filmId) {
         return filmService.getFilmById(filmId);
     }
 
     @GetMapping
-    public Collection<Film> findAll() {
+    public List<Film> findAll() {
         return filmService.getAllFilms();
     }
 

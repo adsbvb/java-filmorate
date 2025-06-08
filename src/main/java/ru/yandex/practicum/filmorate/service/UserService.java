@@ -21,8 +21,8 @@ public class UserService {
         this.userStorage = userStorage;
     }
 
-    public Optional<User> getUserById(Long id) {
-        return userStorage.getUserById(id);
+    public User getUserById(Long id) {
+        return userStorage.getUserById(id).orElseThrow(() -> new NotFoundException("Фильм с id=" + id + " не найден."));
     }
 
     public List<User> getAllUsers() {
@@ -38,8 +38,8 @@ public class UserService {
     }
 
     public void addFriend(Long userId, Long friendId) {
-        User user = findUserOrThrow(userId);
-        User friend = findUserOrThrow(friendId);
+        User user = getUserById(userId);
+        User friend = getUserById(friendId);
 
         user.getFriends().add(friendId);
         friend.getFriends().add(userId);
@@ -49,8 +49,8 @@ public class UserService {
     }
 
     public void removeFriend(Long userId, Long friendId) {
-        User user = findUserOrThrow(userId);
-        User friend = findUserOrThrow(friendId);
+        User user = getUserById(userId);
+        User friend = getUserById(friendId);
 
         user.getFriends().remove(friendId);
         friend.getFriends().remove(userId);
@@ -60,7 +60,7 @@ public class UserService {
     }
 
     public List<User> getFriends(Long userId) {
-        User user = findUserOrThrow(userId);
+        User user = getUserById(userId);
         return user.getFriends().stream()
                 .map(userStorage::getUserById)
                 .filter(Optional::isPresent)
@@ -69,8 +69,8 @@ public class UserService {
     }
 
     public List<User> getCommonFriends(Long userId, Long otherId) {
-        User u1 = findUserOrThrow(userId);
-        User u2 = findUserOrThrow(otherId);
+        User u1 = getUserById(userId);
+        User u2 = getUserById(otherId);
         Set<Long> commonIds = new HashSet<>(u1.getFriends());
         commonIds.retainAll(u2.getFriends());
         return commonIds.stream()
@@ -78,10 +78,6 @@ public class UserService {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect((Collectors.toList()));
-    }
-
-    private User findUserOrThrow(Long id) {
-        return userStorage.getUserById(id).orElseThrow(() -> new NotFoundException("Пользователь с id=" + id + " не найден."));
     }
 
 }

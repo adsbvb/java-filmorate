@@ -7,9 +7,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class FilmService {
@@ -22,11 +20,11 @@ public class FilmService {
         this.userStorage = userStorage;
     }
 
-    public Optional<Film> getFilmById(Long id) {
-        return filmStorage.getFilmById(id);
+    public Film getFilmById(Long id) {
+        return filmStorage.getFilmById(id).orElseThrow(() -> new NotFoundException("Фильм с id=" + id + " не найден."));
     }
 
-    public Collection<Film> getAllFilms() {
+    public List<Film> getAllFilms() {
         return filmStorage.getAllFilms();
     }
 
@@ -39,7 +37,7 @@ public class FilmService {
     }
 
     public void likeFilm(Long filmId, Long userId) {
-        Film film = filmStorage.getFilmById(filmId).orElseThrow(() -> new NotFoundException("Фильм с id=" + filmId + " не найден."));
+        Film film = getFilmById(filmId);
         if (userStorage.getUserById(userId).isEmpty()) {
             throw new NotFoundException("Пользователь с id=" + userId + "не найден.");
         }
@@ -48,7 +46,7 @@ public class FilmService {
     }
 
     public void unlikeFilm(Long filmId, Long userId) {
-        Film film = filmStorage.getFilmById(filmId).orElseThrow(() -> new NotFoundException("Фильм с id=" + filmId + " не найден."));
+        Film film = getFilmById(filmId);
         if (!film.getLikedBy().contains(userId)) {
             throw new NotFoundException("Пользователь с id=" + userId + " в списке лайков не найден.");
         }
