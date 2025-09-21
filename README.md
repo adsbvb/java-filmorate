@@ -4,7 +4,7 @@ Template repository for Filmorate project.
 
 ## ER Diagram for a Filmorate Database
 
-![image](ER diagram.png)
+![image](/adsbvb/java-filmorate/blob/add_database_ER-diagram/ER%20diagram.png)
 
 ## Примеры SQL-запросов для основных операций
 
