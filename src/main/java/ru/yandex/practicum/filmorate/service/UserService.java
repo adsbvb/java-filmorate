@@ -1,83 +1,140 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
+import ru.yandex.practicum.filmorate.dto.NewUserRequest;
+import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
+import ru.yandex.practicum.filmorate.dal.UserJdbcStorage;
+import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class UserService {
-    private final UserStorage userStorage;
+    private final UserJdbcStorage userJdbcStorage;
 
     @Autowired
-    public UserService(UserStorage userStorage) {
-        this.userStorage = userStorage;
+    public UserService(UserJdbcStorage userJdbcStorage) {
+        this.userJdbcStorage = userJdbcStorage;
     }
 
-    public User getUserById(Long id) {
-        return userStorage.getUserById(id).orElseThrow(() -> new NotFoundException("Фильм с id=" + id + " не найден."));
+    public UserDto getUserById(Long userId) {
+        log.info("Поиск пользователя по id: {}", userId);
+        UserDto userDto = userJdbcStorage.findById(userId)
+                .map(UserMapper::mapToUserDto)
+                .orElseThrow(() -> {
+                    log.warn("Пользователь не найден с id: {}", userId);;
+                    return new NotFoundException("Пользователь не найден с id: " + userId);
+                });
+        log.info("Найден пользователь: {}", userDto);
+        return userDto;
     }
 
-    public List<User> getAllUsers() {
-        return userStorage.getAllUsers();
+    public List<UserDto> getAllUsers() {
+        log.info("Поиск всех пользователей");
+        List<UserDto> users = userJdbcStorage.findAll()
+                .stream()
+                .map(UserMapper::mapToUserDto)
+                .toList();
+        log.info("Всего пользователей: {}", users.size());
+        return users;
     }
 
-    public User createUser(User user) {
-        return userStorage.addUser(user);
+    public UserDto createUser(NewUserRequest request) {
+        log.info("Создание нового пользователя с данными: {}", request);
+        if (request.getName() == null || request.getName().isBlank()) {
+            request.setName(request.getLogin());
+            log.info("Имя пользователя пустое, установлено как логин: {}", request.getLogin());
+        }
+        Optional<User> alreadyExistsUser = userJdbcStorage.findByEmail(request.getEmail());
+        if (alreadyExistsUser.isPresent()) {
+            log.warn("Попытка создать пользователя с уже существующим email: {}", request.getEmail());
+            throw new DuplicatedDataException("Данный email уже используется: " + request.getEmail());
+        }
+        User user = UserMapper.mapToUser(request);
+        user = userJdbcStorage.save(user);
+        log.info("Создан пользователь: {}", user);
+        return UserMapper.mapToUserDto(user);
     }
 
-    public User updateUser(User user) {
-        return userStorage.updateUser(user);
+    public UserDto updateUser(UpdateUserRequest request) {
+        log.info("Обновление пользователя с ID: {}", request.getId());
+        User updatedUser = userJdbcStorage.findById(request.getId())
+                .map(user -> {
+                    log.info("Найден пользователь для обновления: {}", user);
+                    return UserMapper.updateUserFields(user, request);
+                })
+                .orElseThrow(() -> {
+                    log.warn("Пользователь не найден для обновления с id: {}", request.getId());
+                    return new NotFoundException("Пользователь не найден для обновления с id: " + request.getId());
+                });
+        updatedUser = userJdbcStorage.update(updatedUser);
+        log.info("Пользователь после обновления: {}", updatedUser);
+        return UserMapper.mapToUserDto(updatedUser);
     }
 
     public void addFriend(Long userId, Long friendId) {
-        User user = getUserById(userId);
-        User friend = getUserById(friendId);
-
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
-
-        userStorage.updateUser(user);
-        userStorage.updateUser(friend);
+        log.info("Добавление друга с id: {} для пользователя с id: {}", friendId, userId);
+        userJdbcStorage.findById(userId).orElseThrow(() -> {
+            log.warn("Пользователь не найден с id: {}", userId);
+            return new NotFoundException("Пользователь не найден с id: " + userId);
+        });
+        userJdbcStorage.findById(friendId).orElseThrow(() -> {
+            log.warn("Пользователь не найден с id: {}", friendId);
+            return new NotFoundException("Пользователь не найден с id: " + friendId);
+        });
+        userJdbcStorage.addFriend(userId, friendId);
+        log.info("Друг с id: {} успешно добавлен к пользователю с id: {}", friendId, userId);
     }
 
-    public void removeFriend(Long userId, Long friendId) {
-        User user = getUserById(userId);
-        User friend = getUserById(friendId);
-
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
-
-        userStorage.updateUser(user);
-        userStorage.updateUser(friend);
+    public boolean removeFriend(Long userId, Long friendId) {
+        log.info("Удаление друга с id: {} у пользователя с id: {}", friendId, userId);
+        userJdbcStorage.findById(userId).orElseThrow(() -> {
+            log.warn("Пользователь не найден с id: {}", userId);;
+            return new NotFoundException("Пользователь не найден с id: " + userId);
+        });
+        userJdbcStorage.findById(friendId).orElseThrow(() -> {
+            log.warn("Пользователь не найден с id: {}", friendId);;
+            return new NotFoundException("Пользователь не найден с id: " + friendId);
+        });
+        return userJdbcStorage.removeFriend(userId, friendId);
     }
 
-    public List<User> getFriends(Long userId) {
-        User user = getUserById(userId);
-        return user.getFriends().stream()
-                .map(userStorage::getUserById)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+    public List<UserDto> getFriends(Long userId) {
+        log.info("Получение друзей пользователя с id: {}", userId);
+        User user = userJdbcStorage.findById(userId).orElseThrow(() -> {
+            log.warn("Пользователь не найден с id: {}", userId);;
+            return new NotFoundException("Пользователь не найден с id: " + userId);
+        });
+        List<User> friends = userJdbcStorage.getFriends(userId);
+        log.info("Пользователь с id: {} имеет {} друзей", userId, friends.size());
+        return friends.stream()
+                .map(UserMapper::mapToUserDto)
                 .collect(Collectors.toList());
     }
 
-    public List<User> getCommonFriends(Long userId, Long otherId) {
-        User u1 = getUserById(userId);
-        User u2 = getUserById(otherId);
-        Set<Long> commonIds = new HashSet<>(u1.getFriends());
-        commonIds.retainAll(u2.getFriends());
-        return commonIds.stream()
-                .map(userStorage::getUserById)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect((Collectors.toList()));
+    public List<UserDto> getCommonFriends(Long userId, Long otherUserId) {
+        log.info("Получение общих друзей между пользователями {} и {}", userId, otherUserId);
+        userJdbcStorage.findById(userId).orElseThrow(() -> {
+            log.warn("Пользователь не найден с id: {}", userId);;
+            return new NotFoundException("Пользователь не найден с id: " + userId);
+        });
+        userJdbcStorage.findById(otherUserId).orElseThrow(() -> {
+            log.warn("Пользователь не найден с id: {}", otherUserId);;
+            return new NotFoundException("Пользователь не найден с id: " + otherUserId);
+        });
+        List<User> commonFriends = userJdbcStorage.getCommonFriends(userId, otherUserId);
+        log.info("Общих друзей найдено: {}", commonFriends.size());
+        return commonFriends.stream()
+                .map(UserMapper::mapToUserDto)
+                .collect(Collectors.toList());
     }
-
 }
