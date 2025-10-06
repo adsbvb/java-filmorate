@@ -6,10 +6,7 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Repository
 public class GenreJdbcStorage extends BaseRepository<Genre> implements GenreRepository {
@@ -34,20 +31,22 @@ public class GenreJdbcStorage extends BaseRepository<Genre> implements GenreRepo
         return findMany(FIND_ALL_QUERY);
     }
 
-    protected void saveFilmGenres(Film film) {
+    public void saveFilmGenres(Film film) {
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            List<Object[]> batchList = new ArrayList<>();
             for (Genre genre : film.getGenres()) {
-                update(INSERT_QUERY, film.getId(), genre.getId());
+                batchList.add(new Object[] {film.getId(), genre.getId()});
             }
+            jdbcTemplate.batchUpdate(INSERT_QUERY, batchList);
         }
     }
 
-    protected void updateFilmGenres(Film film) {
+    public void updateFilmGenres(Film film) {
         jdbcTemplate.update(DELETE_QUERY, film.getId());
         saveFilmGenres(film);
     }
 
-    protected void loadFilmGenres(Film film) {
+    public void loadFilmGenres(Film film) {
         Set<Genre> genres = new HashSet<>(jdbcTemplate.query(LOAD_FILM_GENRES_QUERY, mapper, film.getId()));
         film.setGenres(genres);
     }

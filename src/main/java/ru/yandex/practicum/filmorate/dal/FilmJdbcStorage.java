@@ -10,9 +10,6 @@ import java.util.Optional;
 
 @Component
 public class FilmJdbcStorage extends BaseRepository<Film> implements FilmRepository {
-    private final GenreJdbcStorage genreJdbcStorage;
-    private final MpaJdbcStorage mpaJdbcStorage;
-
     private static final String FIND_BY_ID_QUERY = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa " +
             "FROM films f " + "LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id " + "WHERE f.id = ?";
     private static final String FIND_ALL_QUERY = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa " +
@@ -27,18 +24,13 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
             "FROM films f " + "JOIN film_likes l ON f.id = l.film_id " + "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
             "ORDER BY COUNT(l.user_id) DESC " + "LIMIT ?";
 
-    public FilmJdbcStorage(JdbcTemplate jdbcTemplate, RowMapper<Film> mapper, GenreJdbcStorage genreJdbcStorage, MpaJdbcStorage mpaJdbcStorage) {
+    public FilmJdbcStorage(JdbcTemplate jdbcTemplate, RowMapper<Film> mapper) {
         super(jdbcTemplate, mapper);
-        this.genreJdbcStorage = genreJdbcStorage;
-        this.mpaJdbcStorage = mpaJdbcStorage;
     }
 
     @Override
     public Optional<Film> findById(Long id) {
-        Optional<Film> filmOpt = findOne(FIND_BY_ID_QUERY, id);
-        filmOpt.ifPresent(genreJdbcStorage::loadFilmGenres);
-        filmOpt.ifPresent(mpaJdbcStorage::loadFilmMpa);
-        return filmOpt;
+        return findOne(FIND_BY_ID_QUERY, id);
     }
 
     @Override
@@ -57,7 +49,6 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 (film.getMpa() != null) ? film.getMpa().getId() : null
         );
         film.setId(filmId);
-        genreJdbcStorage.saveFilmGenres(film);
         return film;
     }
 
@@ -73,7 +64,6 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 (film.getMpa() != null) ? film.getMpa().getId() : null,
                 filmId
         );
-        genreJdbcStorage.updateFilmGenres(film);
         return film;
     }
 

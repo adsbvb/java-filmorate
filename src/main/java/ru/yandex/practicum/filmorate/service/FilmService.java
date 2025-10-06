@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dal.FilmJdbcStorage;
+import ru.yandex.practicum.filmorate.dal.GenreJdbcStorage;
+import ru.yandex.practicum.filmorate.dal.MpaJdbcStorage;
 import ru.yandex.practicum.filmorate.dal.UserJdbcStorage;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
@@ -13,6 +15,7 @@ import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -20,17 +23,22 @@ import java.util.stream.Collectors;
 public class FilmService {
     private final FilmJdbcStorage filmJdbcStorage;
     private final UserJdbcStorage userJdbcStorage;
+    private final GenreJdbcStorage genreJdbcStorage;
+    private final MpaJdbcStorage mpaJdbcStorage;
 
     @Autowired
-    public FilmService(FilmJdbcStorage filmJdbcStorage, UserJdbcStorage userJdbcStorage) {
+    public FilmService(FilmJdbcStorage filmJdbcStorage, UserJdbcStorage userJdbcStorage, GenreJdbcStorage genreJdbcStorage, MpaJdbcStorage mpaJdbcStorage) {
         this.filmJdbcStorage = filmJdbcStorage;
         this.userJdbcStorage = userJdbcStorage;
+        this.genreJdbcStorage = genreJdbcStorage;
+        this.mpaJdbcStorage = mpaJdbcStorage;
     }
 
     public FilmDto createFilm(NewFilmRequest request) {
         log.info("Создание нового фильма с данными: {}", request);
         Film film = FilmMapper.mapToFilm(request);
         film = filmJdbcStorage.save(film);
+        genreJdbcStorage.saveFilmGenres(film);
         log.info("Фильм успешно создан с id: {}", film.getId());
         return FilmMapper.mapToFilmDto(film);
     }
@@ -47,14 +55,17 @@ public class FilmService {
                     return new NotFoundException("Фильм для обновления не найден с id: " + request.getId());
                 });
         updatedFilm = filmJdbcStorage.update(updatedFilm);
+        genreJdbcStorage.updateFilmGenres(updatedFilm);
         log.info("Фильм с id {} обновлен успешно", updatedFilm.getId());
         return FilmMapper.mapToFilmDto(updatedFilm);
     }
 
     public FilmDto getFilmById(Long filmId) {
         log.info("Получение фильма по id: {}", filmId);
-        return filmJdbcStorage.findById(filmId)
-                .map(film -> {
+        Optional<Film> filmOpt = filmJdbcStorage.findById(filmId);
+        filmOpt.ifPresent(genreJdbcStorage::loadFilmGenres);
+        filmOpt.ifPresent(mpaJdbcStorage::loadFilmMpa);
+        return filmOpt.map(film -> {
                     log.info("Фильм найден: {}", film);
                     return FilmMapper.mapToFilmDto(film);
                 })

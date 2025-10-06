@@ -29,7 +29,7 @@ public class MpaJdbcStorage extends BaseRepository<Mpa> implements MpaRepository
         return findMany(FIND_ALL_QUERY);
     }
 
-    protected void loadFilmMpa(Film film) {
+    public void loadFilmMpa(Film film) {
         if (film.getMpa() != null && film.getMpa().getId() != null) {
             String mpaName = jdbcTemplate.queryForObject(LOAD_FILM_MPA_QUERY, String.class, film.getMpa().getId());
             if (mpaName != null) {

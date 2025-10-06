@@ -1,9 +1,11 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.NewUserRequest;
@@ -16,12 +18,13 @@ import java.util.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
+@Validated
 public class UserController {
     private final UserService userService;
 
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public UserDto getUserById(@PathVariable("id") Long userId) {
+    public UserDto getUserById(@PathVariable("id") @Positive Long userId) {
         log.info("Получен запрос получение пользователя с id: {}", userId);
         return userService.getUserById(userId);
     }
@@ -47,27 +50,27 @@ public class UserController {
     }
 
     @PutMapping("/{id}/friends/{friend_id}")
-    public void addFriend(@PathVariable("id") Long userId, @PathVariable("friend_id") Long friendId) {
+    public void addFriend(@PathVariable("id") @Positive Long userId, @PathVariable("friend_id") @Positive Long friendId) {
         log.info("Получен запрос на добавление пользователя {} в друзья к пользователю {}", friendId, userId);
         userService.addFriend(userId, friendId);
     }
 
     @GetMapping("/{id}/friends")
     @ResponseStatus(HttpStatus.OK)
-    public List<UserDto> getFriends(@PathVariable("id") Long userId) {
+    public List<UserDto> getFriends(@PathVariable("id") @Positive Long userId) {
         log.info("Получен запрос на получения списка друзей пользователя id: {}", userId);
         return userService.getFriends(userId);
     }
 
     @DeleteMapping("/{id}/friends/{friend_id}")
-    public boolean removeFriend(@PathVariable("id") Long userId, @PathVariable("friend_id") Long friendId) {
+    public boolean removeFriend(@PathVariable("id") @Positive Long userId, @PathVariable("friend_id") @Positive Long friendId) {
         log.info("Получен запрос на удаление пользователя {} из списка друзей пользователя {}", friendId, userId);
         return userService.removeFriend(userId, friendId);
     }
 
     @GetMapping("/{id}/friends/common/{other_id}")
     @ResponseStatus(HttpStatus.OK)
-    public List<UserDto> getCommonFriends(@PathVariable("id") Long userId, @PathVariable("other_id") Long otherUserId) {
+    public List<UserDto> getCommonFriends(@PathVariable("id") @Positive Long userId, @PathVariable("other_id") @Positive Long otherUserId) {
         log.info("Получен запрос на получение списка общих друзей пользователя {} и {}", userId, otherUserId);
         return userService.getCommonFriends(userId, otherUserId);
     }
