@@ -1,61 +1,77 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.constraints.Positive;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
+import ru.yandex.practicum.filmorate.dto.NewUserRequest;
+import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.*;
 
+@Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/users")
+@Validated
 public class UserController {
     private final UserService userService;
 
-    @Autowired
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-
     @GetMapping("/{id}")
-    public User findUser(@PathVariable("id") Long userId) {
+    @ResponseStatus(HttpStatus.OK)
+    public UserDto getUserById(@PathVariable("id") @Positive Long userId) {
+        log.info("Получен запрос получение пользователя с id: {}", userId);
         return userService.getUserById(userId);
     }
 
     @GetMapping
-    public Collection<User> findAll() {
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserDto> getAllUsers() {
+        log.info("Получен запрос на получение списка всех пользователей");
         return userService.getAllUsers();
     }
 
     @PostMapping
-    public User create(@Valid @RequestBody User user) {
-        return userService.createUser(user);
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserDto create(@Valid @RequestBody NewUserRequest newUserRequest) {
+        log.info("Получен запрос на создания пользователя {}", newUserRequest.getLogin());
+        return userService.createUser(newUserRequest);
     }
 
     @PutMapping
-    public User update(@Valid @RequestBody User user) {
-        return userService.updateUser(user);
+    public UserDto update(@Valid @RequestBody UpdateUserRequest request) {
+        log.info("Получен запрос на обновление пользователя с id: {}", request.getId());
+        return userService.updateUser(request);
     }
 
-    @PutMapping("/{id}/friends/{friendId}")
-    public void addFriend(@PathVariable("id") Long userId, @PathVariable("friendId") Long friendId) {
+    @PutMapping("/{id}/friends/{friend_id}")
+    public void addFriend(@PathVariable("id") @Positive Long userId, @PathVariable("friend_id") @Positive Long friendId) {
+        log.info("Получен запрос на добавление пользователя {} в друзья к пользователю {}", friendId, userId);
         userService.addFriend(userId, friendId);
     }
 
-    @DeleteMapping("/{id}/friends/{friendId}")
-    public void deleteFriend(@PathVariable("id") Long userId, @PathVariable("friendId") Long friendId) {
-        userService.removeFriend(userId, friendId);
-    }
-
     @GetMapping("/{id}/friends")
-    public List<User> getAllFriends(@PathVariable("id") Long userId) {
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserDto> getFriends(@PathVariable("id") @Positive Long userId) {
+        log.info("Получен запрос на получения списка друзей пользователя id: {}", userId);
         return userService.getFriends(userId);
     }
 
-    @GetMapping("/{id}/friends/common/{otherId}")
-    public List<User> getCommonFriends(@PathVariable("id") Long userId, @PathVariable("otherId") Long otherUserId) {
-        return userService.getCommonFriends(userId, otherUserId);
+    @DeleteMapping("/{id}/friends/{friend_id}")
+    public boolean removeFriend(@PathVariable("id") @Positive Long userId, @PathVariable("friend_id") @Positive Long friendId) {
+        log.info("Получен запрос на удаление пользователя {} из списка друзей пользователя {}", friendId, userId);
+        return userService.removeFriend(userId, friendId);
     }
 
+    @GetMapping("/{id}/friends/common/{other_id}")
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserDto> getCommonFriends(@PathVariable("id") @Positive Long userId, @PathVariable("other_id") @Positive Long otherUserId) {
+        log.info("Получен запрос на получение списка общих друзей пользователя {} и {}", userId, otherUserId);
+        return userService.getCommonFriends(userId, otherUserId);
+    }
 }

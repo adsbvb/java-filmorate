@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import ru.yandex.practicum.filmorate.model.ErrorResponse;
 
 @RestControllerAdvice
@@ -54,6 +55,15 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleConstraint(DataIntegrityViolationException e) {
+        logger.error("DataIntegrityViolationException: " + e.getMessage(), e);
+        ErrorResponse errorResponse = new ErrorResponse(
+                e.getMessage()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleThrowable(final Throwable e) {
         logger.error("error: " + e.getMessage(), e);
         ErrorResponse errorResponse = new ErrorResponse(
@@ -61,5 +71,4 @@ public class ErrorHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
 }
