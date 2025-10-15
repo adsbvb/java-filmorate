@@ -32,6 +32,19 @@ CREATE TABLE IF NOT EXISTS genres (
     name VARCHAR(40) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS directors (
+    director_id     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    director_name   VARCHAR(225) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS film_directors (
+    film_id     BIGINT NOT NULL,
+    director_id BIGINT NOT NULL,
+    PRIMARY KEY (film_id, director_id),
+    FOREIGN KEY (film_id) REFERENCES films (id) ON DELETE CASCADE,
+    FOREIGN KEY (director_id) REFERENCES directors (director_id) ON DELETE CASCADE
+    );
+
 CREATE TABLE IF NOT EXISTS films (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
