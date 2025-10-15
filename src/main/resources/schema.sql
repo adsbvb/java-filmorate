@@ -1,10 +1,13 @@
 DROP TABLE IF EXISTS film_genres;
 DROP TABLE IF EXISTS genres CASCADE;
 DROP TABLE IF EXISTS film_likes;
-DROP TABLE IF EXISTS films;
+DROP TABLE IF EXISTS films CASCADE;
 DROP TABLE IF EXISTS mpa_ratings CASCADE;
 DROP TABLE IF EXISTS friends;
-DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS reviews CASCADE;
+DROP TABLE IF EXISTS review_likes;
+DROP TABLE IF EXISTS review_dislikes;
 
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -56,4 +59,29 @@ CREATE TABLE IF NOT EXISTS film_likes (
     PRIMARY KEY (user_id, film_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS reviews (
+    review_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    content VARCHAR(255) NOT NULL,
+    is_positive BOOLEAN NOT NULL,
+    user_id BIGINT NOT NULL,
+    film_id BIGINT NOT NULL,
+    useful INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (film_id) REFERENCES films(id)
+);
+
+CREATE TABLE IF NOT EXISTS review_likes (
+    review_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    PRIMARY KEY (review_id, user_id),
+    FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS review_dislikes (
+    review_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    PRIMARY KEY (review_id, user_id),
+    FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
 );
