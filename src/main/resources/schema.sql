@@ -27,6 +27,19 @@ CREATE TABLE IF NOT EXISTS mpa_ratings (
     name VARCHAR(40) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS directors (
+    director_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    director_name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS films_directors (
+    film_id BIGINT NOT NULL,
+    director_id BIGINT NOT NULL,
+    PRIMARY KEY (film_id, director_id),
+    FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE,
+    FOREIGN KEY (director_id) REFERENCES directors(director_id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS genres (
     genre_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(40) NOT NULL
