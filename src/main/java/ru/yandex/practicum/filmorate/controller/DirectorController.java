@@ -23,7 +23,7 @@ public class DirectorController {
     private final DirectorService directorService;
 
     @GetMapping
-    public Collection<DirectorDto>  findAll() {
+    public Collection<DirectorDto> findAll() {
         log.trace("Получен запрос на получение коллекции режиссеров");
         return directorService.findAll();
     }

@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 @Component
-public class DirectorJdbcStorage extends BaseRepository<Director> implements DirectorRepository{
+public class DirectorJdbcStorage extends BaseRepository<Director> implements DirectorRepository {
 
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM directors WHERE director_id = ?";
     private static final String FIND_ALL_QUERY = "SELECT * FROM directors ORDER BY director_id";
