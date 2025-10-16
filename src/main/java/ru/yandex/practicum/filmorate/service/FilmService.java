@@ -118,4 +118,23 @@ public class FilmService {
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());
     }
+
+    public List<FilmDto> getCommonFilm(Long userId, Long friendId) {
+        log.info("Получение общих фильмов у пользователей {} и {}", userId, friendId);
+        userJdbcStorage.findById(userId).orElseThrow(() -> {
+            log.warn("Пользователь с id {} не найден при добавлении лайка", userId);
+            return new NotFoundException("Пользователь с id " + userId + "не найден");
+        });
+        userJdbcStorage.findById(userId).orElseThrow(() -> {
+            log.warn("Пользователь с id {} не найден при добавлении лайка", friendId);
+            return new NotFoundException("Пользователь с id " + friendId + "не найден");
+        });
+
+        List<Film> commonFilms = filmJdbcStorage.getCommonFilm(userId, friendId);
+        log.info("Найдено {} общих фильмов", commonFilms.size());
+
+        return commonFilms.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
+    }
 }

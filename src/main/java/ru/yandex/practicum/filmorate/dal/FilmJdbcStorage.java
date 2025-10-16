@@ -24,6 +24,18 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
             "FROM films f " + "JOIN film_likes l ON f.id = l.film_id " + "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
             "ORDER BY COUNT(l.user_id) DESC " + "LIMIT ?";
 
+    private static final String FIND_COMMON_FILM_QUERY = """
+            SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+            FROM films f
+            JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
+            JOIN (SELECT film_id, COUNT(user_id) AS like_count
+                FROM film_likes
+                GROUP BY film_id) fl ON f.id = fl.film_id
+            WHERE f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?)
+            AND f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?)
+            ORDER BY fl.like_count DESC
+            """;
+
     public FilmJdbcStorage(JdbcTemplate jdbcTemplate, RowMapper<Film> mapper) {
         super(jdbcTemplate, mapper);
     }
@@ -89,4 +101,11 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     public List<Film> getPopular(int count) {
         return findMany(FIND_POPULAR_FILM_QUERY, count);
     }
+
+    @Override
+    public List<Film> getCommonFilm(Long userId, Long friendId) {
+        return findMany(FIND_COMMON_FILM_QUERY, userId, friendId);
+    }
+
+
 }
