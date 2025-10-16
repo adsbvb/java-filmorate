@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.List;
@@ -66,5 +67,19 @@ public class FilmController {
     public boolean removeLike(@PathVariable("film_id") @Positive Long filmId, @PathVariable("id") @Positive Long userId) {
         log.info("Получен запрос на удаление лайка у фильма {} от пользователя {}", filmId, userId);
         return filmService.removeLike(filmId, userId);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public List<FilmDto> getFilmsByDirector(
+            @PathVariable Long directorId,
+            @RequestParam(defaultValue = "year") String sortBy) {
+
+        log.trace("Получен запрос на получение фильмов режиссера {} с сортировкой по {}", directorId, sortBy);
+
+        if (!"year".equals(sortBy) && !"likes".equals(sortBy)) {
+            throw new ValidationException("Параметр sortBy может быть только 'year' или 'likes'");
+        }
+
+        return filmService.getFilmsByDirectorId(directorId, sortBy);
     }
 }
