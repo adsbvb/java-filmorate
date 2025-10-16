@@ -133,8 +133,8 @@ public class FilmService {
         List<Film> commonFilms = filmJdbcStorage.getCommonFilm(userId, friendId);
         log.info("Найдено {} общих фильмов", commonFilms.size());
 
-        return commonFilms.stream()
+        return genreJdbcStorage.getGenresByFilms(commonFilms).stream()
                 .map(FilmMapper::mapToFilmDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

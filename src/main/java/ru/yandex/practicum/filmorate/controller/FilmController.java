@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +69,7 @@ public class FilmController {
     }
 
     @GetMapping("/common")
-    public List<FilmDto> getCommonFilms(@RequestParam @Min(1) Long userId, @RequestParam @Min(1) Long friendId) {
+    public List<FilmDto> getCommonFilms(@RequestParam @Positive Long userId, @RequestParam @Positive Long friendId) {
         log.info("Получен запрос на поиск общих фильмов у пользователей с id {} и {}", userId, friendId);
         return filmService.getCommonFilm(userId, friendId);
     }
