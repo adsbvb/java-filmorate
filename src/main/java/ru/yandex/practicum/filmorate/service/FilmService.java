@@ -125,7 +125,7 @@ public class FilmService {
             log.warn("Пользователь с id {} не найден при добавлении лайка", userId);
             return new NotFoundException("Пользователь с id " + userId + "не найден");
         });
-        userJdbcStorage.findById(userId).orElseThrow(() -> {
+        userJdbcStorage.findById(friendId).orElseThrow(() -> {
             log.warn("Пользователь с id {} не найден при добавлении лайка", friendId);
             return new NotFoundException("Пользователь с id " + friendId + "не найден");
         });
