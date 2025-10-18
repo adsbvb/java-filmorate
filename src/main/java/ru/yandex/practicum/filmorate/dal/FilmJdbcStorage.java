@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.dal;
 
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -93,8 +95,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     @Override
     public List<Film> getPopular(Integer genreId, Integer year, int count) {
         String sql;
-        List<Object> params = new ArrayList<>();
-        if (genreId != null && year != null) {
+        if (genreId != null && year != null && isGenre(genreId)) {
             sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
                     "FROM films f " +
                     "JOIN film_genres g ON f.id = g.film_id " +
@@ -104,7 +105,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                     "ORDER BY COUNT(l.user_id) DESC " +
                     "LIMIT ?";
             return jdbcTemplate.query(sql, mapper, genreId, year, count);
-        } else if (genreId != null) {
+        } else if (genreId != null && isGenre(genreId)) {
             sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
                     "FROM films f " +
                     "JOIN film_genres g ON f.id = g.film_id " +
@@ -132,7 +133,12 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 "LIMIT ?";
         return jdbcTemplate.query(sql, mapper,count);
     }
-
-
-
+    private boolean isGenre (int genreId) {
+        try {
+            jdbcTemplate.queryForObject("SELECT COUNT(*) FROM genres WHERE genre_id = ?",Integer.class,genreId);
+        } catch (EmptyResultDataAccessException e) {
+            return false;
+        }
+        return true;
+    }
 }
