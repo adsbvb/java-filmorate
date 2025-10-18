@@ -64,15 +64,17 @@ public class ImplReviewService implements ReviewService {
         Review review = reviewJdbcStorage.findById(id)
                 .orElseThrow(() -> {
                     log.warn("Review with id {} not found", id);
-                    return new NotFoundException("Not found for update review with id {}: " + id);
+                    return new NotFoundException("Not found review with id {}: " + id);
                 });
         return ReviewMapper.mapToReviewDto(review);
     }
 
     @Override
     public List<ReviewDto> getReviewsByFilmId(Long filmId, Integer count) {
+        log.info("Getting reviews by film id {}", filmId);
         List<Review> reviews;
         reviews = reviewJdbcStorage.findReviews(filmId, count);
+        log.info("Total reviews found {}", reviews.size());
         return reviews.stream()
                 .map(ReviewMapper::mapToReviewDto)
                 .toList();
@@ -80,21 +82,25 @@ public class ImplReviewService implements ReviewService {
 
     @Override
     public void addUserLike(Long id, Long userId) {
+        log.info("Add user like");
         reviewJdbcStorage.addLikeDislike(id, userId, true);
     }
 
     @Override
     public void addUserDislike(Long id, Long userId) {
+        log.info("Add user dislike");
         reviewJdbcStorage.addLikeDislike(id, userId, false);
     }
 
     @Override
     public void deleteUserLike(Long id, Long userId) {
+        log.info("Delete user like");
         reviewJdbcStorage.removeLikeDislike(id, userId, true);
     }
 
     @Override
     public void deleteUserDislike(Long id, Long userId) {
+        log.info("Delete user dislike");
         reviewJdbcStorage.removeLikeDislike(id, userId, false);
     }
 

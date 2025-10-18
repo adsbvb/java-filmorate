@@ -43,7 +43,7 @@ public class ReviewController {
     public void deleteReview(
             @PathVariable("id") @Positive Long id
     ) {
-        log.info("Request deleteReview review");
+        log.info("Request delete review");
         reviewService.deleteReviewById(id);
     }
 
@@ -89,7 +89,7 @@ public class ReviewController {
             @PathVariable("id") @Positive Long id,
             @PathVariable("userId") @Positive Long userId
     ) {
-        log.info("Request deleteReview like review");
+        log.info("Request delete like review");
         reviewService.deleteUserLike(id, userId);
     }
 
@@ -98,7 +98,7 @@ public class ReviewController {
             @PathVariable("id") @Positive Long id,
             @PathVariable("userId") @Positive Long userId
     ) {
-        log.info("Request deleteReview dislike review");
+        log.info("Request delete dislike review");
         reviewService.deleteUserDislike(id, userId);
     }
 }
