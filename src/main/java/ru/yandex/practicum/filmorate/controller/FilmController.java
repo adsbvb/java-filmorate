@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,9 +53,12 @@ public class FilmController {
 
     @GetMapping("/popular")
     @ResponseStatus(HttpStatus.OK)
-    public List<FilmDto> getPopular(@RequestParam(defaultValue = "10") @Positive int count) {
+    public List<FilmDto> getPopular(@RequestParam(defaultValue = "10") @Positive int count,
+                                    @RequestParam(required = false) @Positive Integer genreId,
+                                    @RequestParam(required = false) @Min(value = 1895,
+                                            message = "Фильм должен быть выпущен после 1895") Integer year) {
         log.info("Получен запрос на получение списка популярных фильмов ТОП-{}", count);
-        return filmService.getPopularFilms(count);
+        return filmService.getPopularFilms(count,genreId, year);
     }
 
     @PutMapping("/{film_id}/like/{id}")

@@ -137,9 +137,9 @@ public class FilmService {
         return filmJdbcStorage.removeLike(filmId, userId);
     }
 
-    public List<FilmDto> getPopularFilms(int count) {
+    public List<FilmDto> getPopularFilms(int count, Integer genreId, Integer releaseYear) {
         log.info("Получение {} популярных фильмов", count);
-        List<Film> films = filmJdbcStorage.getPopular(count);
+        List<Film> films = filmJdbcStorage.getPopular(genreId, releaseYear, count);
         log.info("Найдено {} популярных фильмов", films.size());
         return films.stream()
                 .map(FilmMapper::mapToFilmDto)
