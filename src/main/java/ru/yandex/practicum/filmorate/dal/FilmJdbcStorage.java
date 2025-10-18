@@ -1,13 +1,13 @@
 package ru.yandex.practicum.filmorate.dal;
 
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
 
 @Component
@@ -24,12 +24,12 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
 
     private static final String FIND_POPULAR_FILM_QUERY =
             "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
-            "FROM films f " +
-            "JOIN film_likes l ON f.id = l.film_id " +
-            "JOIN film_genres g ON f.id = g.film_id " +
-            "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
-            "ORDER BY COUNT(l.user_id) DESC " +
-            "LIMIT ?";
+                    "FROM films f " +
+                    "JOIN film_likes l ON f.id = l.film_id " +
+                    "JOIN film_genres g ON f.id = g.film_id " +
+                    "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
+                    "ORDER BY COUNT(l.user_id) DESC " +
+                    "LIMIT ?";
 
     public FilmJdbcStorage(JdbcTemplate jdbcTemplate, RowMapper<Film> mapper) {
         super(jdbcTemplate, mapper);
@@ -131,11 +131,12 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
                 "ORDER BY COUNT(l.user_id) DESC " +
                 "LIMIT ?";
-        return jdbcTemplate.query(sql, mapper,count);
+        return jdbcTemplate.query(sql, mapper, count);
     }
+
     private boolean isGenre(int genreId) {
         try {
-            jdbcTemplate.queryForObject("SELECT COUNT(*) FROM genres WHERE genre_id = ?",Integer.class,genreId);
+            jdbcTemplate.queryForObject("SELECT COUNT(*) FROM genres WHERE genre_id = ?", Integer.class, genreId);
         } catch (EmptyResultDataAccessException e) {
             return false;
         }
