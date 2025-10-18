@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.List;
@@ -62,7 +63,7 @@ public class FilmService {
         genreJdbcStorage.updateFilmGenres(updatedFilm);
         if (request.hasDirectors()) {
             Set<Long> directorsIds = request.getDirectors().stream()
-                    .map(director -> director.getId())
+                    .map(Director::getId)
                     .collect(Collectors.toSet());
             filmDirectorRepository.updateFilmDirectors(updatedFilm.getId(), directorsIds);
         }
@@ -104,11 +105,6 @@ public class FilmService {
         });
 
         List<Film> films = filmDirectorRepository.findFilmsByDirectorId(directorId, sortBy);
-
-        films.forEach(genreJdbcStorage::loadFilmGenres);
-        films.forEach(mpaJdbcStorage::loadFilmMpa);
-        films.forEach(filmDirectorRepository::loadFilmDirectors);
-
         log.info("Найдено {} фильмов режиссера {}", films.size(), directorId);
         return films.stream()
                 .map(FilmMapper::mapToFilmDto)

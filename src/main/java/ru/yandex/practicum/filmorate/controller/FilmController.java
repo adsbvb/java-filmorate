@@ -76,7 +76,7 @@ public class FilmController {
 
         log.trace("Получен запрос на получение фильмов режиссера {} с сортировкой по {}", directorId, sortBy);
 
-        if (!"year".equals(sortBy) && !"likes".equals(sortBy)) {
+        if (!sortBy.equals("year") && !sortBy.equals("likes")) {
             throw new ValidationException("Параметр sortBy может быть только 'year' или 'likes'");
         }
 
