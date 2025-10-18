@@ -108,7 +108,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                     """;
             return jdbcTemplate.query(sql, mapper, genreId, year, count);
         } else if (genreId != null && isGenre(genreId)) {
-            sql = """ 
+            sql = """
                       SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
                       FROM films f
                       JOIN film_genres g ON f.id = g.film_id
