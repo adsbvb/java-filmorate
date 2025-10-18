@@ -15,7 +15,7 @@ import java.util.List;
 
 @Slf4j
 @Service
-public class ImplReviewService implements ReviewService{
+public class ImplReviewService implements ReviewService {
     private final ReviewRepository reviewJdbcStorage;
 
     @Autowired
