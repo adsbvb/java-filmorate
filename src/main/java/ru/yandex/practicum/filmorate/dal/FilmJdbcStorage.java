@@ -133,7 +133,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 "LIMIT ?";
         return jdbcTemplate.query(sql, mapper,count);
     }
-    private boolean isGenre (int genreId) {
+    private boolean isGenre(int genreId) {
         try {
             jdbcTemplate.queryForObject("SELECT COUNT(*) FROM genres WHERE genre_id = ?",Integer.class,genreId);
         } catch (EmptyResultDataAccessException e) {
