@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 public class GenreJdbcStorage extends BaseRepository<Genre> implements GenreRepository {
@@ -49,5 +50,41 @@ public class GenreJdbcStorage extends BaseRepository<Genre> implements GenreRepo
     public void loadFilmGenres(Film film) {
         Set<Genre> genres = new HashSet<>(jdbcTemplate.query(LOAD_FILM_GENRES_QUERY, mapper, film.getId()));
         film.setGenres(genres);
+    }
+
+    public List<Film> getGenresByFilms(List<Film> films) {
+        List<Long> filmsId = films.stream().map(Film::getId).toList();
+        Map<Long, Film> filmsMap = films.stream().collect(Collectors.toMap(Film::getId, film -> film));
+
+        if (filmsId.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String idsStr = filmsId.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String filmGenresSql = """
+				SELECT
+					fg.film_id,
+					g.genre_id,
+					g.name
+				FROM genres g
+				JOIN film_genres fg ON g.genre_id = fg.genre_id
+				WHERE fg.film_id IN (""" + idsStr + ") " +
+                "ORDER BY g.genre_id";
+        Map<Long, Set<Genre>> genreMap = new HashMap<>();
+        jdbcTemplate.query(filmGenresSql, rs -> {
+            Long filmId = rs.getLong("film_id");
+            Genre genre = mapper.mapRow(rs, 0);
+
+            if (!genreMap.containsKey(filmId)) {
+                genreMap.put(filmId, new HashSet<>());
+            }
+            genreMap.get(filmId).add(genre);
+        });
+
+        for (Film currentFilm : filmsMap.values()) {
+            currentFilm.setGenres(genreMap.getOrDefault(currentFilm.getId(), Collections.emptySet()));
+        }
+
+        return filmsMap.values().stream().toList();
     }
 }

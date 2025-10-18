@@ -69,6 +69,12 @@ public class FilmController {
         return filmService.removeLike(filmId, userId);
     }
 
+    @GetMapping("/common")
+    public List<FilmDto> getCommonFilms(@RequestParam @Positive Long userId, @RequestParam @Positive Long friendId) {
+        log.info("Получен запрос на поиск общих фильмов у пользователей с id {} и {}", userId, friendId);
+        return filmService.getCommonFilm(userId, friendId);
+    }
+
     @GetMapping("/director/{directorId}")
     public List<FilmDto> getFilmsByDirector(
             @PathVariable Long directorId,
