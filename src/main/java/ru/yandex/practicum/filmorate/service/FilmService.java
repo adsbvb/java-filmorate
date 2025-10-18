@@ -11,7 +11,6 @@ import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 
@@ -111,15 +110,9 @@ public class FilmService {
         return filmJdbcStorage.removeLike(filmId, userId);
     }
 
-    public List<FilmDto> getPopularFilms(int count,Integer genreId, Integer releaseYear) {
-        if (releaseYear != null) {
-            if (releaseYear < 1895) {
-                log.warn("Передан некорректный год релиза фильма");
-                throw new ValidationException("Передан некорректный год релиза фильма");
-            }
-        }
+    public List<FilmDto> getPopularFilms(int count, Integer genreId, Integer releaseYear) {
         log.info("Получение {} популярных фильмов", count);
-        List<Film> films = filmJdbcStorage.getPopular(genreId, releaseYear,count);
+        List<Film> films = filmJdbcStorage.getPopular(genreId, releaseYear, count);
         log.info("Найдено {} популярных фильмов", films.size());
         return films.stream()
                 .map(FilmMapper::mapToFilmDto)
