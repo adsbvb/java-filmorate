@@ -9,8 +9,8 @@ import lombok.experimental.FieldDefaults;
 public class Review {
     Long reviewId;
     String content;
-    boolean isPositive;
+    Boolean isPositive;
     Long userId;
     Long filmId;
-    int useful;
+    Integer useful;
 }

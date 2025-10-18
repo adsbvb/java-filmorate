@@ -11,8 +11,8 @@ public class ReviewDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     Long reviewId;
     String content;
-    boolean isPositive;
+    Boolean isPositive;
     Long userId;
     Long filmId;
-    int useful;
+    Integer useful;
 }
