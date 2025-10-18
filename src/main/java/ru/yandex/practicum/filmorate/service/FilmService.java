@@ -3,19 +3,18 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.dal.FilmJdbcStorage;
-import ru.yandex.practicum.filmorate.dal.GenreJdbcStorage;
-import ru.yandex.practicum.filmorate.dal.MpaJdbcStorage;
-import ru.yandex.practicum.filmorate.dal.UserJdbcStorage;
+import ru.yandex.practicum.filmorate.dal.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -25,13 +24,18 @@ public class FilmService {
     private final UserJdbcStorage userJdbcStorage;
     private final GenreJdbcStorage genreJdbcStorage;
     private final MpaJdbcStorage mpaJdbcStorage;
+    private final DirectorJdbcStorage directorJdbcStorage;
+    private final FilmDirectorRepository filmDirectorRepository;
 
     @Autowired
-    public FilmService(FilmJdbcStorage filmJdbcStorage, UserJdbcStorage userJdbcStorage, GenreJdbcStorage genreJdbcStorage, MpaJdbcStorage mpaJdbcStorage) {
+    public FilmService(FilmJdbcStorage filmJdbcStorage, UserJdbcStorage userJdbcStorage, GenreJdbcStorage genreJdbcStorage, MpaJdbcStorage mpaJdbcStorage,
+                       DirectorJdbcStorage directorJdbcStorage, FilmDirectorRepository filmDirectorRepository) {
         this.filmJdbcStorage = filmJdbcStorage;
         this.userJdbcStorage = userJdbcStorage;
         this.genreJdbcStorage = genreJdbcStorage;
         this.mpaJdbcStorage = mpaJdbcStorage;
+        this.directorJdbcStorage = directorJdbcStorage;
+        this.filmDirectorRepository = filmDirectorRepository;
     }
 
     public FilmDto createFilm(NewFilmRequest request) {
@@ -39,6 +43,7 @@ public class FilmService {
         Film film = FilmMapper.mapToFilm(request);
         film = filmJdbcStorage.save(film);
         genreJdbcStorage.saveFilmGenres(film);
+        filmDirectorRepository.saveFilmDirectors(film.getId(), request.getDirectorsId());
         log.info("Фильм успешно создан с id: {}", film.getId());
         return FilmMapper.mapToFilmDto(film);
     }
@@ -56,6 +61,12 @@ public class FilmService {
                 });
         updatedFilm = filmJdbcStorage.update(updatedFilm);
         genreJdbcStorage.updateFilmGenres(updatedFilm);
+        if (request.hasDirectors()) {
+            Set<Long> directorsIds = request.getDirectors().stream()
+                    .map(Director::getId)
+                    .collect(Collectors.toSet());
+            filmDirectorRepository.updateFilmDirectors(updatedFilm.getId(), directorsIds);
+        }
         log.info("Фильм с id {} обновлен успешно", updatedFilm.getId());
         return FilmMapper.mapToFilmDto(updatedFilm);
     }
@@ -65,6 +76,7 @@ public class FilmService {
         Optional<Film> filmOpt = filmJdbcStorage.findById(filmId);
         filmOpt.ifPresent(genreJdbcStorage::loadFilmGenres);
         filmOpt.ifPresent(mpaJdbcStorage::loadFilmMpa);
+        filmOpt.ifPresent(filmDirectorRepository::loadFilmDirectors);
         return filmOpt.map(film -> {
                     log.info("Фильм найден: {}", film);
                     return FilmMapper.mapToFilmDto(film);
@@ -78,7 +90,22 @@ public class FilmService {
     public List<FilmDto> getAllFilms() {
         log.info("Получение списка всех фильмов");
         List<Film> films = filmJdbcStorage.findAll();
+        films.forEach(filmDirectorRepository::loadFilmDirectors);
         log.info("Найдено {} фильмов", films.size());
+        return films.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<FilmDto> getFilmsByDirectorId(Long directorId, String sortBy) {
+        log.info("Получение фильмов режиссера {} с сортировкой по: {}", directorId, sortBy);
+        directorJdbcStorage.findById(directorId).orElseThrow(() -> {
+            log.warn("Режиссер с id {} не найден", directorId);
+            return new NotFoundException("Режиссер не найден с id: " + directorId);
+        });
+
+        List<Film> films = filmDirectorRepository.findFilmsByDirectorId(directorId, sortBy);
+        log.info("Найдено {} фильмов режиссера {}", films.size(), directorId);
         return films.stream()
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());
