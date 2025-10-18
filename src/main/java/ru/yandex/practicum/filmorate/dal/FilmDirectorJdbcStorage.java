@@ -30,8 +30,8 @@ public class FilmDirectorJdbcStorage implements FilmDirectorRepository {
     private static final String FIND_DIRECTOR_IDS_BY_FILM_QUERY =
             "SELECT director_id FROM film_directors WHERE film_id = ?";
     private static final String FIND_FILMS_BY_DIRECTOR_WITH_DETAILS_QUERY = """
-            SELECT 
-                f.id, f.name, f.description, f.release_date, f.duration, 
+            SELECT
+                f.id, f.name, f.description, f.release_date, f.duration,
                 f.mpa_id, m.name AS mpa_name,
                 g.genre_id, g.name AS genre_name,
                 d.director_id, d.director_name,
