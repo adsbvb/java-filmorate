@@ -3,25 +3,23 @@ package ru.yandex.practicum.filmorate.dal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.LinkedHashMap;
-import java.util.HashSet;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.HashMap;
 
 @Component
 @RequiredArgsConstructor
 public class FilmDirectorJdbcStorage implements FilmDirectorRepository {
     private final JdbcTemplate jdbcTemplate;
+    private final FilmRowMapper  filmRowMapper;
 
     private static final String INSERT_FILM_DIRECTORS_QUERY =
             "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?)";
@@ -29,21 +27,8 @@ public class FilmDirectorJdbcStorage implements FilmDirectorRepository {
             "DELETE FROM film_directors WHERE film_id = ?";
     private static final String FIND_DIRECTOR_IDS_BY_FILM_QUERY =
             "SELECT director_id FROM film_directors WHERE film_id = ?";
-    private static final String FIND_FILMS_BY_DIRECTOR_WITH_DETAILS_QUERY = """
-            SELECT
-                f.id, f.name, f.description, f.release_date, f.duration,
-                f.mpa_id, m.name AS mpa_name,
-                g.genre_id, g.name AS genre_name,
-                d.director_id, d.director_name,
-                (SELECT COUNT(*) FROM film_likes l WHERE l.film_id = f.id) AS likes_count
-            FROM films f
-            JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
-            JOIN film_directors fd ON f.id = fd.film_id
-            JOIN directors d ON fd.director_id = d.director_id
-            LEFT JOIN film_genres fg ON f.id = fg.film_id
-            LEFT JOIN genres g ON fg.genre_id = g.genre_id
-            WHERE d.director_id = ?
-            """;
+    private static final String FIND_FILM_IDS_BY_DIRECTOR_QUERY =
+            "SELECT film_id FROM film_directors WHERE director_id = ?";
 
     @Override
     public void saveFilmDirectors(Long filmId, Set<Long> directorIds) {
@@ -85,7 +70,7 @@ public class FilmDirectorJdbcStorage implements FilmDirectorRepository {
                         .id(rs.getLong("director_id"))
                         .name(rs.getString("director_name"))
                         .build(),
-                directorIds.toArray()  // параметры передаем отдельно
+                directorIds.toArray()
         );
 
         film.setDirectors(new HashSet<>(directors));
@@ -93,70 +78,98 @@ public class FilmDirectorJdbcStorage implements FilmDirectorRepository {
 
     @Override
     public List<Film> findFilmsByDirectorId(Long directorId, String sortBy) {
-        String orderByClause = getOrderByClause(sortBy);
-        String fullQuery = FIND_FILMS_BY_DIRECTOR_WITH_DETAILS_QUERY + orderByClause;
+        List<Long> filmIds = jdbcTemplate.queryForList(
+                FIND_FILM_IDS_BY_DIRECTOR_QUERY, Long.class, directorId
+        );
 
-        List<Film> filmsWithDuplicates = jdbcTemplate.query(fullQuery, this::mapRowToFilm, directorId);
-
-        return mergeDuplicateFilms(filmsWithDuplicates);
-    }
-
-    private String getOrderByClause(String sortBy) {
-        if (sortBy.equals("year")) {
-            return " ORDER BY f.release_date";
-        } else if (sortBy.equals("likes")) {
-            return " ORDER BY likes_count DESC";
-        } else {
-            return " ORDER BY f.id";
-        }
-    }
-
-    private Film mapRowToFilm(ResultSet rs, int rowNum) throws SQLException {
-        Film film = new Film();
-        film.setId(rs.getLong("id"));
-        film.setName(rs.getString("name"));
-        film.setDescription(rs.getString("description"));
-        film.setReleaseDate(rs.getDate("release_date").toLocalDate());
-        film.setDuration(rs.getInt("duration"));
-
-        if (rs.getObject("mpa_id") != null) {
-            Mpa mpa = new Mpa();
-            mpa.setId(rs.getInt("mpa_id"));
-            mpa.setName(rs.getString("mpa_name"));
-            film.setMpa(mpa);
+        if (filmIds.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        if (rs.getObject("genre_id") != null) {
+        String filmsSql = buildFilmsQuery(filmIds.size(), sortBy);
+        List<Film> films = jdbcTemplate.query(filmsSql, filmIds.toArray(), filmRowMapper);
+
+        Map<Long, Set<Genre>> filmGenresMap = loadGenresForFilms(filmIds);
+
+        Map<Long, Set<Director>> filmDirectorsMap = loadDirectorsForFilms(filmIds);
+
+        for (Film film : films) {
+            film.setGenres(filmGenresMap.getOrDefault(film.getId(), Collections.emptySet()));
+            film.setDirectors(filmDirectorsMap.getOrDefault(film.getId(), Collections.emptySet()));
+        }
+
+        return films;
+    }
+
+    private String buildFilmsQuery(int filmCount, String sortBy) {
+        String placeholders = String.join(",", Collections.nCopies(filmCount, "?"));
+
+        String baseQuery = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                "f.mpa_id, m.name AS mpa_name " +
+                "FROM films f JOIN mpa_ratings m ON f.mpa_id = m.mpa_id " +
+                "WHERE f.id IN (" + placeholders + ")";
+
+        String orderBy = getOrderByClause(sortBy);
+
+        return baseQuery + orderBy;
+    }
+
+    private Map<Long, Set<Genre>> loadGenresForFilms(List<Long> filmIds) {
+        if (filmIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(filmIds.size(), "?"));
+        String sql = "SELECT fg.film_id, g.genre_id, g.name " +
+                "FROM film_genres fg JOIN genres g ON fg.genre_id = g.genre_id " +
+                "WHERE fg.film_id IN (" + placeholders + ")";
+
+        Map<Long, Set<Genre>> filmGenresMap = new HashMap<>();
+
+        jdbcTemplate.query(sql, filmIds.toArray(), (rs, rowNum) -> {
+            Long filmId = rs.getLong("film_id");
             Genre genre = new Genre();
             genre.setId(rs.getInt("genre_id"));
-            genre.setName(rs.getString("genre_name"));
-            film.getGenres().add(genre);
+            genre.setName(rs.getString("name"));
+            filmGenresMap.computeIfAbsent(filmId, k -> new HashSet<>()).add(genre);
+            return null;
+        });
+
+        return filmGenresMap;
+    }
+
+    private Map<Long, Set<Director>> loadDirectorsForFilms(List<Long> filmIds) {
+        if (filmIds.isEmpty()) {
+            return Collections.emptyMap();
         }
 
-        if (rs.getObject("director_id") != null) {
+        String placeholders = String.join(",", Collections.nCopies(filmIds.size(), "?"));
+        String sql = "SELECT fd.film_id, d.director_id, d.director_name " +
+                "FROM film_directors fd JOIN directors d ON fd.director_id = d.director_id " +
+                "WHERE fd.film_id IN (" + placeholders + ")";
+
+        Map<Long, Set<Director>> filmDirectorsMap = new HashMap<>();
+
+        jdbcTemplate.query(sql, filmIds.toArray(), (rs, rowNum) -> {
+            Long filmId = rs.getLong("film_id");
             Director director = Director.builder()
                     .id(rs.getLong("director_id"))
                     .name(rs.getString("director_name"))
                     .build();
-            film.getDirectors().add(director);
-        }
+            filmDirectorsMap.computeIfAbsent(filmId, k -> new HashSet<>()).add(director);
+            return null;
+        });
 
-        return film;
+        return filmDirectorsMap;
     }
 
-    private List<Film> mergeDuplicateFilms(List<Film> filmsWithDuplicates) {
-        Map<Long, Film> filmMap = new LinkedHashMap<>();
-
-        for (Film film : filmsWithDuplicates) {
-            Long filmId = film.getId();
-            if (filmMap.containsKey(filmId)) {
-                Film existingFilm = filmMap.get(filmId);
-                existingFilm.getGenres().addAll(film.getGenres());
-            } else {
-                filmMap.put(filmId, film);
-            }
+    private String getOrderByClause(String sortBy) {
+        if ("year".equals(sortBy)) {
+            return " ORDER BY f.release_date";
+        } else if ("likes".equals(sortBy)) {
+            return " ORDER BY (SELECT COUNT(*) FROM film_likes l WHERE l.film_id = f.id) DESC";
+        } else {
+            return " ORDER BY f.id";
         }
-
-        return new ArrayList<>(filmMap.values());
     }
 }
