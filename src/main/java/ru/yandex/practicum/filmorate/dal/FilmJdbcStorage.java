@@ -24,6 +24,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     private static final String FIND_POPULAR_FILM_QUERY = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
             "FROM films f " + "JOIN film_likes l ON f.id = l.film_id " + "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
             "ORDER BY COUNT(l.user_id) DESC " + "LIMIT ?";
+
     private static final String DELETE_FILM_QUERY = "DELETE FROM films WHERE id = ?";
 
     private static final String FIND_COMMON_FILM_QUERY = """
@@ -240,9 +241,10 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     }
 
     @Override
-    public void deleteFilm(Long filmId){
-        update(DELETE_FILM_QUERY,filmId);
+    public void deleteFilm(Long filmId) {
+        update(DELETE_FILM_QUERY, filmId);
     }
+
 
     private boolean isGenre(int genreId) {
         try {
