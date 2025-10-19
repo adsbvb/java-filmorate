@@ -24,7 +24,6 @@ import java.util.List;
 @Validated
 public class FilmController {
     private final FilmService filmService;
-    private final JdbcTemplate jdbcTemplate;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
