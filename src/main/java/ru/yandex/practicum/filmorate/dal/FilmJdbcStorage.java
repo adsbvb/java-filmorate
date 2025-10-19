@@ -110,6 +110,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                     JOIN film_genres g ON f.id = g.film_id
                     JOIN film_likes l ON f.id = l.film_id
                     WHERE g.genre_id = ? AND EXTRACT(YEAR FROM PARSEDATETIME(f.release_date, 'yyyy-MM-dd')) = ?
+                    AND EXISTS (SELECT 1 FROM films WHERE id = f.id)
                     GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
                     ORDER BY COUNT(l.user_id) DESC
                     LIMIT ?
@@ -117,14 +118,15 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
             return jdbcTemplate.query(sql, mapper, genreId, year, count);
         } else if (genreId != null && isGenre(genreId)) {
             sql = """
-                      SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                      FROM films f
-                      JOIN film_genres g ON f.id = g.film_id
-                      JOIN film_likes l ON f.id = l.film_id
-                      WHERE g.genre_id = ?
-                      GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                      ORDER BY COUNT(l.user_id) DESC
-                      LIMIT ?
+                    SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+                    FROM films f
+                    JOIN film_genres g ON f.id = g.film_id
+                    JOIN film_likes l ON f.id = l.film_id
+                    WHERE g.genre_id = ?
+                    AND EXISTS (SELECT 1 FROM films WHERE id = f.id)
+                    GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+                    ORDER BY COUNT(l.user_id) DESC
+                    LIMIT ?
                     """;
             return jdbcTemplate.query(sql, mapper, genreId, count);
         } else if (year != null) {
@@ -133,6 +135,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                     FROM films f
                     JOIN film_likes l ON f.id = l.film_id
                     WHERE EXTRACT(YEAR FROM f.release_date) = ?
+                    AND EXISTS (SELECT 1 FROM films WHERE id = f.id)
                     GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
                     ORDER BY COUNT(l.user_id) DESC
                     LIMIT ?
@@ -143,6 +146,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
                 FROM films f
                 JOIN film_likes l ON f.id = l.film_id
+                WHERE EXISTS (SELECT 1 FROM films WHERE id = f.id)
                 GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
                 ORDER BY COUNT(l.user_id) DESC
                 LIMIT ?
