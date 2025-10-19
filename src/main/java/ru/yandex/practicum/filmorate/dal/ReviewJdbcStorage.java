@@ -1,6 +1,6 @@
 package ru.yandex.practicum.filmorate.dal;
 
-import jakarta.annotation.Nullable;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -76,15 +77,13 @@ public class ReviewJdbcStorage extends BaseRepository<Review> implements ReviewR
     }
 
     @Override
-    public List<Review> findReviews(@Nullable Long filmId, int limit) {
+    public List<Review> findReviews(Long filmId, int limit) {
         StringBuilder sql = new StringBuilder("SELECT * FROM reviews");
         try {
             if (filmId != null) {
                 sql.append(" WHERE film_id = ?");
             }
-
             sql.append(" ORDER BY review_id DESC LIMIT ?");
-
             if (filmId != null) {
                 return jdbcTemplate.query(sql.toString(), new Object[]{filmId, limit}, mapper);
             } else {
@@ -117,26 +116,6 @@ public class ReviewJdbcStorage extends BaseRepository<Review> implements ReviewR
         }
     }
 
-    private int countLikes(Long reviewId) {
-        String sql = "SELECT COUNT(*) FROM review_likes_dislikes WHERE review_id = ? AND is_like = true";
-        try {
-            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, reviewId);
-            return count != null ? count : 0;
-        } catch (InternalServerException e) {
-            throw new InternalServerException(e.getMessage());
-        }
-    }
-
-    private int countDislikes(Long reviewId) {
-        String sql = "SELECT COUNT(*) FROM review_likes_dislikes WHERE review_id = ? AND is_like = false";
-        try {
-            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, reviewId);
-            return count != null ? count : 0;
-        } catch (InternalServerException e) {
-            throw new InternalServerException(e.getMessage());
-        }
-    }
-
     private void updateUseful(Long reviewId, int useful) {
         String sql = "UPDATE reviews SET useful = ? WHERE review_id = ?";
         try {
@@ -147,12 +126,18 @@ public class ReviewJdbcStorage extends BaseRepository<Review> implements ReviewR
     }
 
     private void refreshUseful(Long reviewId) {
+        String sql = "SELECT " +
+                "SUM(CASE WHEN is_like THEN 1 ELSE 0 END) AS likes, " +
+                "SUM(CASE WHEN is_like THEN 0 ELSE 1 END) AS dislikes " +
+                "FROM review_likes_dislikes WHERE review_id = ?";
         try {
-            int likes = countLikes(reviewId);
-            int dislikes = countDislikes(reviewId);
-            int useful = likes - dislikes;
-            updateUseful(reviewId, useful);
-        } catch (InternalServerException e) {
+            Map<String, Object> result = jdbcTemplate.queryForMap(sql,reviewId);
+            int likes = result.get("likes") != null ? ((Number) result.get("likes")).intValue() : 0;
+            int dislikes = result.get("dislikes") != null ? ((Number) result.get("dislikes")).intValue() : 0;
+            updateUseful(reviewId, likes - dislikes);
+        } catch (EmptyResultDataAccessException e) {
+            updateUseful(reviewId, 0);
+        } catch (Exception e) {
             throw new InternalServerException(e.getMessage());
         }
     }
