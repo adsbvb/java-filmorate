@@ -22,7 +22,6 @@ public class FilmRowMapper implements RowMapper<Film> {
         if (rs.getObject("mpa_id") != null) {
             Mpa mpa = new Mpa();
             mpa.setId(rs.getInt("mpa_id"));
-            mpa.setName(rs.getString("mpa"));
             film.setMpa(mpa);
         }
 
