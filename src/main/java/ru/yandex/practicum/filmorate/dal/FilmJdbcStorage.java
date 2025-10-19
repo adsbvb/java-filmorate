@@ -156,8 +156,8 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     }
 
     @Override
-    public void deleteFilm(Long filmId){
-        update(DELETE_FILM_QUERY,filmId);
+    public void deleteFilm(Long filmId) {
+        update(DELETE_FILM_QUERY, filmId);
     }
 
 
