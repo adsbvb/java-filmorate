@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.dal;
 
+
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -9,8 +10,10 @@ import ru.yandex.practicum.filmorate.model.Film;
 import java.util.List;
 import java.util.Optional;
 
+
 @Component
 public class FilmJdbcStorage extends BaseRepository<Film> implements FilmRepository {
+
     private static final String FIND_BY_ID_QUERY = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa " +
             "FROM films f " + "LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id " + "WHERE f.id = ?";
     private static final String FIND_ALL_QUERY = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa " +
@@ -151,6 +154,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 ORDER BY COUNT(l.user_id) DESC
                 LIMIT ?
                 """;
+
         return jdbcTemplate.query(sql, mapper, count);
     }
 

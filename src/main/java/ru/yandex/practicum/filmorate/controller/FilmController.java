@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
@@ -16,6 +17,7 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.List;
 
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -23,6 +25,7 @@ import java.util.List;
 @Validated
 public class FilmController {
     private final FilmService filmService;
+    private final JdbcTemplate jdbcTemplate;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -100,4 +103,5 @@ public class FilmController {
 
         return filmService.getFilmsByDirectorId(directorId, sortBy);
     }
+
 }
