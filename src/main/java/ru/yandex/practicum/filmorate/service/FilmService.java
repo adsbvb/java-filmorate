@@ -118,4 +118,14 @@ public class FilmService {
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());
     }
+
+    public void deleteFilm(Long filmId) {
+        log.info("Удаление фильма с id : {}", filmId);
+        filmJdbcStorage.findById(filmId).orElseThrow(() -> {
+            log.warn("Не найден фильм с id : " + filmId);
+            return new NotFoundException("Фильм с id " + filmId + " найден:" );
+        });
+        filmJdbcStorage.deleteFilm(filmId);
+        log.info("Удален фильм с id : {}", filmId);
+    }
 }

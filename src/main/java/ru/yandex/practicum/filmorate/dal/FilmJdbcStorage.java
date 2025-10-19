@@ -23,6 +23,8 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     private static final String FIND_POPULAR_FILM_QUERY = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
             "FROM films f " + "JOIN film_likes l ON f.id = l.film_id " + "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
             "ORDER BY COUNT(l.user_id) DESC " + "LIMIT ?";
+    private static final String DELETE_FILM_QUERY = "DELETE FROM films WHERE id = ?";
+
 
     public FilmJdbcStorage(JdbcTemplate jdbcTemplate, RowMapper<Film> mapper) {
         super(jdbcTemplate, mapper);
@@ -88,5 +90,10 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     @Override
     public List<Film> getPopular(int count) {
         return findMany(FIND_POPULAR_FILM_QUERY, count);
+    }
+
+    @Override
+    public void deleteFilm(Long filmId){
+        update(DELETE_FILM_QUERY,filmId);
     }
 }
