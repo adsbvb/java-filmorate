@@ -164,4 +164,18 @@ public class FilmService {
                 .map(FilmMapper::mapToFilmDto)
                 .toList();
     }
+
+    public List<FilmDto> searchFilms(String query, String by) {
+        log.info("Поиск {} по {}", query, by);
+        List<Film> searchResult = filmJdbcStorage.searchFilms(query, by);
+        log.info("Найдено {} фильмов", searchResult.size());
+
+        for (Film currentFilm : searchResult) { // костыль, Саша должен поправить
+            filmDirectorRepository.loadFilmDirectors(currentFilm);
+        }
+
+        return genreJdbcStorage.getGenresByFilms(searchResult).stream()
+                .map(FilmMapper::mapToFilmDto)
+                .toList();
+    }
 }

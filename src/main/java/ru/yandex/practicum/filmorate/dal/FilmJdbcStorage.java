@@ -149,6 +149,91 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
         return findMany(FIND_COMMON_FILM_QUERY, userId, friendId);
     }
 
+    @Override
+    public List<Film> searchFilms(String query, String by) {
+        switch (by) {
+            case "title" -> {
+                String sql = """
+                        SELECT f.id,
+                            f.name,
+                            f.description,
+                            f.release_date,
+                            f.duration,
+                            f.mpa_id,
+                            m.name
+                        FROM films f
+                        LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
+                        LEFT JOIN film_likes l ON f.id = l.film_id
+                        WHERE f.name LIKE ?
+                        GROUP BY f.id,
+                            f.name,
+                            f.description,
+                            f.release_date,
+                            f.duration,
+                            f.mpa_id,
+                            m.name
+                        ORDER BY COUNT(l.user_id) DESC
+                        """;
+                String title = "%" + query + "%";
+                return findMany(sql, title);
+            }
+            case "director" -> {
+                String sql = """
+                        SELECT f.id,
+                            f.name,
+                            f.description,
+                            f.release_date,
+                            f.duration,
+                            f.mpa_id,
+                            m.name
+                        FROM films f
+                        LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
+                        LEFT JOIN film_likes l ON f.id = l.film_id
+                        LEFT JOIN film_directors fd ON f.id = fd.film_id
+                        LEFT JOIN directors d ON d.director_id = fd.director_id
+                        WHERE d.director_name LIKE ?
+                        GROUP BY f.id,
+                            f.name,
+                            f.description,
+                            f.release_date,
+                            f.duration,
+                            f.mpa_id,
+                            m.name
+                        ORDER BY COUNT(l.user_id) DESC
+                        """;
+                String directorName = "%" + query + "%";
+                return findMany(sql, directorName);
+            }
+			default -> {
+                String sql = """
+                        SELECT f.id,
+                            f.name,
+                            f.description,
+                            f.release_date,
+                            f.duration,
+                            f.mpa_id,
+                            m.name
+                        FROM films f
+                        LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
+                        LEFT JOIN film_likes l ON f.id = l.film_id
+                        LEFT JOIN film_directors fd ON f.id = fd.film_id
+                        LEFT JOIN directors d ON d.director_id = fd.director_id
+                        WHERE d.director_name LIKE ? OR f.name LIKE ?
+                        GROUP BY f.id,
+                            f.name,
+                            f.description,
+                            f.release_date,
+                            f.duration,
+                            f.mpa_id,
+                            m.name
+                        ORDER BY COUNT(l.user_id) DESC
+                        """;
+                String param = "%" + query + "%";
+                return findMany(sql, param, param);
+            }
+		}
+    }
+
     private boolean isGenre(int genreId) {
         try {
             jdbcTemplate.queryForObject("SELECT COUNT(*) FROM genres WHERE genre_id = ?", Integer.class, genreId);
