@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.NewUserRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.UserDto;
@@ -74,6 +75,13 @@ public class UserController {
     public List<UserDto> getCommonFriends(@PathVariable("id") @Positive Long userId, @PathVariable("other_id") @Positive Long otherUserId) {
         log.info("Получен запрос на получение списка общих друзей пользователя {} и {}", userId, otherUserId);
         return userService.getCommonFriends(userId, otherUserId);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable Long id){
+        log.info("Получен запрос на удаления пользователя {}",id);
+        userService.deleteUser(id);
     }
 
     @GetMapping("/{id}/feed")

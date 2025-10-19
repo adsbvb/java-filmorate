@@ -21,6 +21,11 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     private static final String INSERT_FILM_LIKES_QUERY = "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)";
     private static final String DELETE_LIKES_QUERY = "DELETE FROM film_likes WHERE film_id = ? and user_id = ?";
 
+    private static final String FIND_POPULAR_FILM_QUERY = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
+            "FROM films f " + "JOIN film_likes l ON f.id = l.film_id " + "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id " +
+            "ORDER BY COUNT(l.user_id) DESC " + "LIMIT ?";
+    private static final String DELETE_FILM_QUERY = "DELETE FROM films WHERE id = ?";
+
     private static final String FIND_COMMON_FILM_QUERY = """
             SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
             FROM films f
@@ -232,6 +237,11 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 return findMany(sql, param, param);
             }
 		}
+    }
+
+    @Override
+    public void deleteFilm(Long filmId){
+        update(DELETE_FILM_QUERY,filmId);
     }
 
     private boolean isGenre(int genreId) {

@@ -99,4 +99,12 @@ public class FilmController {
 
         return filmService.searchFilms(query, by);
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFilm(@PathVariable Long id) {
+        log.info("Получен запрос на удаление фильма {}", id);
+        filmService.deleteFilm(id);
+    }
+
 }

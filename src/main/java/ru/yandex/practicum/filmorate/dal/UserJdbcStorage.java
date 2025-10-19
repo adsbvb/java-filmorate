@@ -23,6 +23,8 @@ public class UserJdbcStorage extends BaseRepository<User> implements UserStorage
             ") AND u.id IN (" +
             "SELECT f2.friend_id FROM friends f2 WHERE f2.user_id = ?" +
             ")";
+    private static final String DELETE_QUERY = "DELETE FROM users WHERE id = ?";
+
 
     public UserJdbcStorage(JdbcTemplate jdbcTemplate, RowMapper<User> mapper) {
         super(jdbcTemplate, mapper);
@@ -95,5 +97,10 @@ public class UserJdbcStorage extends BaseRepository<User> implements UserStorage
     @Override
     public List<User> getCommonFriends(Long userId1, Long userId2) {
         return findMany(FIND_COMMON_FRIENDS_QUERY, userId1, userId2);
+    }
+
+    @Override
+    public void deleteUser(Long id){
+        update(DELETE_QUERY, id);
     }
 }

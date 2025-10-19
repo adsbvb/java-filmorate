@@ -36,9 +36,6 @@ public class FilmService {
         this.userJdbcStorage = userJdbcStorage;
         this.genreJdbcStorage = genreJdbcStorage;
         this.mpaJdbcStorage = mpaJdbcStorage;
-        this.directorJdbcStorage = directorJdbcStorage;
-        this.filmDirectorRepository = filmDirectorRepository;
-        this.eventRepository = eventRepository;
     }
 
     public FilmDto createFilm(NewFilmRequest request) {
@@ -203,5 +200,15 @@ public class FilmService {
         filmDirectorRepository.loadFilmDirectors(film);
         genreJdbcStorage.loadFilmGenres(film);
         mpaJdbcStorage.loadFilmMpa(film);
+    }
+
+    public void deleteFilm(Long filmId) {
+        log.info("Удаление фильма с id : {}", filmId);
+        filmJdbcStorage.findById(filmId).orElseThrow(() -> {
+            log.warn("Не найден фильм с id : " + filmId);
+            return new NotFoundException("Фильм с id " + filmId + " найден:" );
+        });
+        filmJdbcStorage.deleteFilm(filmId);
+        log.info("Удален фильм с id : {}", filmId);
     }
 }

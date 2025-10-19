@@ -152,4 +152,14 @@ public class UserService {
         });
         return eventRepository.getUsersEventListOnId(userId);
     }
+
+    public void deleteUser(Long userId){
+        log.info("Удаление user с id: {}" ,userId);
+        userJdbcStorage.findById(userId).orElseThrow(() -> {
+            log.warn("Пользователь не найден с id: {}", userId);
+            return new NotFoundException("Пользователь не найден с id: " + userId);
+        });
+        userJdbcStorage.deleteUser(userId);
+        log.info("Пользователь с id : {} успешно удален",userId);
+    }
 }
