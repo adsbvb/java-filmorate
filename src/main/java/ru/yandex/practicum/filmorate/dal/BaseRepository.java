@@ -28,6 +28,7 @@ public class BaseRepository<T> {
     }
 
     protected List<T> findMany(String query, Object... params) {
+
         return jdbcTemplate.query(query, mapper, params);
     }
 

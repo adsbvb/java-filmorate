@@ -1,7 +1,9 @@
 package ru.yandex.practicum.filmorate.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
@@ -10,14 +12,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FilmDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Long id;
-    private String name;
-    private String description;
-    private LocalDate releaseDate;
-    private Integer duration;
-    private Set<Genre> genres = new HashSet<>();
-    private Mpa mpa;
-    private Set<Long> likedBy = new HashSet<>();
+    Long id;
+    String name;
+    String description;
+    LocalDate releaseDate;
+    Integer duration;
+    Set<Genre> genres = new HashSet<>();
+    Mpa mpa;
+    Set<Long> likedBy = new HashSet<>();
+    Set<DirectorDto> directors = new HashSet<>(); //удалил модификатор private добавил аннотацию FiledDefaults
 }

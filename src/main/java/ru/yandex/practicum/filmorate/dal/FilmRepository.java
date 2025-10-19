@@ -18,7 +18,9 @@ public interface FilmRepository {
 
     boolean removeLike(Long filmId, Long userId);
 
-    List<Film> getPopular(int count);
+    List<Film> getPopular(Integer genreId, Integer year, int count);
+
+    List<Film> getCommonFilm(Long userId, Long friendId);
 
     void deleteFilm(Long filmId);
 }

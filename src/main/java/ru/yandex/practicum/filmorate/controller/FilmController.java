@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.List;
@@ -51,9 +53,12 @@ public class FilmController {
 
     @GetMapping("/popular")
     @ResponseStatus(HttpStatus.OK)
-    public List<FilmDto> getPopular(@RequestParam(defaultValue = "10") @Positive int count) {
+    public List<FilmDto> getPopular(@RequestParam(defaultValue = "10") @Positive int count,
+                                    @RequestParam(required = false) @Positive Integer genreId,
+                                    @RequestParam(required = false) @Min(value = 1895,
+                                            message = "Фильм должен быть выпущен после 1895") Integer year) {
         log.info("Получен запрос на получение списка популярных фильмов ТОП-{}", count);
-        return filmService.getPopularFilms(count);
+        return filmService.getPopularFilms(count,genreId, year);
     }
 
     @PutMapping("/{film_id}/like/{id}")
@@ -75,4 +80,24 @@ public class FilmController {
         filmService.deleteFilm(id);
     }
 
+
+    @GetMapping("/common")
+    public List<FilmDto> getCommonFilms(@RequestParam @Positive Long userId, @RequestParam @Positive Long friendId) {
+        log.info("Получен запрос на поиск общих фильмов у пользователей с id {} и {}", userId, friendId);
+        return filmService.getCommonFilm(userId, friendId);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public List<FilmDto> getFilmsByDirector(
+            @PathVariable Long directorId,
+            @RequestParam(defaultValue = "year") String sortBy) {
+
+        log.trace("Получен запрос на получение фильмов режиссера {} с сортировкой по {}", directorId, sortBy);
+
+        if (!sortBy.equals("year") && !sortBy.equals("likes")) {
+            throw new ValidationException("Параметр sortBy может быть только 'year' или 'likes'");
+        }
+
+        return filmService.getFilmsByDirectorId(directorId, sortBy);
+    }
 }
