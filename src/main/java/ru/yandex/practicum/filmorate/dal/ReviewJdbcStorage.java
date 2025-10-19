@@ -131,7 +131,7 @@ public class ReviewJdbcStorage extends BaseRepository<Review> implements ReviewR
                 "SUM(CASE WHEN is_like THEN 0 ELSE 1 END) AS dislikes " +
                 "FROM review_likes_dislikes WHERE review_id = ?";
         try {
-            Map<String, Object> result = jdbcTemplate.queryForMap(sql,reviewId);
+            Map<String, Object> result = jdbcTemplate.queryForMap(sql, reviewId);
             int likes = result.get("likes") != null ? ((Number) result.get("likes")).intValue() : 0;
             int dislikes = result.get("dislikes") != null ? ((Number) result.get("dislikes")).intValue() : 0;
             updateUseful(reviewId, likes - dislikes);

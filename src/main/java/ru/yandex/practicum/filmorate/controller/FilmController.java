@@ -58,7 +58,7 @@ public class FilmController {
                                     @RequestParam(required = false) @Min(value = 1895,
                                             message = "Фильм должен быть выпущен после 1895") Integer year) {
         log.info("Получен запрос на получение списка популярных фильмов ТОП-{}", count);
-        return filmService.getPopularFilms(count,genreId, year);
+        return filmService.getPopularFilms(count, genreId, year);
     }
 
     @PutMapping("/{film_id}/like/{id}")

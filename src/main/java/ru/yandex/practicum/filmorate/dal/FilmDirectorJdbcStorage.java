@@ -21,7 +21,7 @@ import java.util.HashMap;
 @Slf4j
 public class FilmDirectorJdbcStorage implements FilmDirectorRepository {
     private final JdbcTemplate jdbcTemplate;
-    private final FilmRowMapper  filmRowMapper;
+    private final FilmRowMapper filmRowMapper;
 
     private static final String INSERT_FILM_DIRECTORS_QUERY =
             "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?)";

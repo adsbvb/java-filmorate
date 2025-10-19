@@ -160,6 +160,6 @@ public class UserService {
             return new NotFoundException("Пользователь не найден с id: " + userId);
         });
         userJdbcStorage.deleteUser(userId);
-        log.info("Пользователь с id : {} успешно удален",userId);
+        log.info("Пользователь с id : {} успешно удален", userId);
     }
 }
