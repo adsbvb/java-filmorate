@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
@@ -23,6 +24,7 @@ import java.util.List;
 @Validated
 public class FilmController {
     private final FilmService filmService;
+    private final JdbcTemplate jdbcTemplate;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -72,6 +74,7 @@ public class FilmController {
         log.info("Получен запрос на удаление лайка у фильма {} от пользователя {}", filmId, userId);
         return filmService.removeLike(filmId, userId);
     }
+
 
     @GetMapping("/common")
     public List<FilmDto> getCommonFilms(@RequestParam @Positive Long userId, @RequestParam @Positive Long friendId) {
