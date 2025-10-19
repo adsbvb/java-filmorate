@@ -100,7 +100,7 @@ public class UserJdbcStorage extends BaseRepository<User> implements UserStorage
     }
 
     @Override
-    public void deleteUser(Long id){
+    public void deleteUser(Long id) {
         update(DELETE_QUERY, id);
     }
 }

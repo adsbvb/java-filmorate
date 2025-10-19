@@ -36,7 +36,7 @@ public class GenreJdbcStorage extends BaseRepository<Genre> implements GenreRepo
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             List<Object[]> batchList = new ArrayList<>();
             for (Genre genre : film.getGenres()) {
-                batchList.add(new Object[] {film.getId(), genre.getId()});
+                batchList.add(new Object[]{film.getId(), genre.getId()});
             }
             jdbcTemplate.batchUpdate(INSERT_QUERY, batchList);
         }
@@ -62,13 +62,13 @@ public class GenreJdbcStorage extends BaseRepository<Genre> implements GenreRepo
 
         String idsStr = filmsId.stream().map(String::valueOf).collect(Collectors.joining(","));
         String filmGenresSql = """
-				SELECT
-					fg.film_id,
-					g.genre_id,
-					g.name
-				FROM genres g
-				JOIN film_genres fg ON g.genre_id = fg.genre_id
-				WHERE fg.film_id IN (""" + idsStr + ") " +
+                SELECT
+                	fg.film_id,
+                	g.genre_id,
+                	g.name
+                FROM genres g
+                JOIN film_genres fg ON g.genre_id = fg.genre_id
+                WHERE fg.film_id IN (""" + idsStr + ") " +
                 "ORDER BY g.genre_id";
         Map<Long, Set<Genre>> genreMap = new HashMap<>();
         jdbcTemplate.query(filmGenresSql, rs -> {
