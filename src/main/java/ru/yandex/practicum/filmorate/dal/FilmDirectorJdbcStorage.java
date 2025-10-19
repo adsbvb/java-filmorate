@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.dal;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class FilmDirectorJdbcStorage implements FilmDirectorRepository {
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper  filmRowMapper;
@@ -32,10 +34,11 @@ public class FilmDirectorJdbcStorage implements FilmDirectorRepository {
 
     @Override
     public void saveFilmDirectors(Long filmId, Set<Long> directorIds) {
-        if (directorIds != null && !directorIds.isEmpty()) {
-            for (Long directorId : directorIds) {
-                jdbcTemplate.update(INSERT_FILM_DIRECTORS_QUERY, filmId, directorId);
-            }
+        log.info("Сохранение режиссеров для фильма {}: {}", filmId, directorIds);
+        jdbcTemplate.update(DELETE_FILM_DIRECTORS_QUERY, filmId);
+        for (Long directorId : directorIds) {
+            jdbcTemplate.update(INSERT_FILM_DIRECTORS_QUERY, filmId, directorId);
+            log.debug("Связь фильм-режиссер: filmId={}, directorId={}", filmId, directorId);
         }
     }
 
@@ -55,25 +58,8 @@ public class FilmDirectorJdbcStorage implements FilmDirectorRepository {
 
     @Override
     public void loadFilmDirectors(Film film) {
-        Set<Long> directorIds = findDirectorIdsByFilmId(film.getId());
-
-        if (directorIds.isEmpty()) {
-            film.setDirectors(Collections.emptySet());
-            return;
-        }
-
-        String placeholders = String.join(",", Collections.nCopies(directorIds.size(), "?"));
-        String sql = "SELECT director_id, director_name FROM directors WHERE director_id IN (" + placeholders + ")";
-
-        List<Director> directors = jdbcTemplate.query(sql,
-                (rs, rowNum) -> Director.builder()
-                        .id(rs.getLong("director_id"))
-                        .name(rs.getString("director_name"))
-                        .build(),
-                directorIds.toArray()
-        );
-
-        film.setDirectors(new HashSet<>(directors));
+        Map<Long, Set<Director>> result = loadDirectorsForFilms(List.of(film.getId()));
+        film.setDirectors(result.getOrDefault(film.getId(), Collections.emptySet()));
     }
 
     @Override
