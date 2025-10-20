@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS events (
     event_type VARCHAR(20) NOT NULL,
     operation VARCHAR(25) NOT NULL,
     entity_id INTEGER NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS mpa_ratings (
