@@ -16,6 +16,7 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.List;
 
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -72,7 +73,6 @@ public class FilmController {
         log.info("Получен запрос на удаление лайка у фильма {} от пользователя {}", filmId, userId);
         return filmService.removeLike(filmId, userId);
     }
-
 
     @GetMapping("/common")
     public List<FilmDto> getCommonFilms(@RequestParam @Positive Long userId, @RequestParam @Positive Long friendId) {

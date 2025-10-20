@@ -113,7 +113,6 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                     JOIN film_genres g ON f.id = g.film_id
                     JOIN film_likes l ON f.id = l.film_id
                     WHERE g.genre_id = ? AND EXTRACT(YEAR FROM PARSEDATETIME(f.release_date, 'yyyy-MM-dd')) = ?
-                    AND EXISTS (SELECT 1 FROM films WHERE id = f.id)
                     GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
                     ORDER BY COUNT(l.user_id) DESC
                     LIMIT ?
