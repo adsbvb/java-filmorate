@@ -32,22 +32,17 @@ public class UserService {
 
     public UserDto getUserById(Long userId) {
         log.info("Поиск пользователя по id: {}", userId);
-        UserDto userDto = userJdbcStorage.findById(userId)
-                .map(UserMapper::mapToUserDto)
-                .orElseThrow(() -> {
-                    log.warn("Пользователь не найден с id: {}", userId);
-                    return new NotFoundException("Пользователь не найден с id: " + userId);
-                });
+        UserDto userDto = userJdbcStorage.findById(userId).map(UserMapper::mapToUserDto).orElseThrow(() -> {
+            log.warn("Пользователь не найден с id: {}", userId);
+            return new NotFoundException("Пользователь не найден с id: " + userId);
+        });
         log.info("Найден пользователь: {}", userDto);
         return userDto;
     }
 
     public List<UserDto> getAllUsers() {
         log.info("Поиск всех пользователей");
-        List<UserDto> users = userJdbcStorage.findAll()
-                .stream()
-                .map(UserMapper::mapToUserDto)
-                .toList();
+        List<UserDto> users = userJdbcStorage.findAll().stream().map(UserMapper::mapToUserDto).toList();
         log.info("Всего пользователей: {}", users.size());
         return users;
     }
@@ -71,15 +66,13 @@ public class UserService {
 
     public UserDto updateUser(UpdateUserRequest request) {
         log.info("Обновление пользователя с ID: {}", request.getId());
-        User updatedUser = userJdbcStorage.findById(request.getId())
-                .map(user -> {
-                    log.info("Найден пользователь для обновления: {}", user);
-                    return UserMapper.updateUserFields(user, request);
-                })
-                .orElseThrow(() -> {
-                    log.warn("Пользователь не найден для обновления с id: {}", request.getId());
-                    return new NotFoundException("Пользователь не найден для обновления с id: " + request.getId());
-                });
+        User updatedUser = userJdbcStorage.findById(request.getId()).map(user -> {
+            log.info("Найден пользователь для обновления: {}", user);
+            return UserMapper.updateUserFields(user, request);
+        }).orElseThrow(() -> {
+            log.warn("Пользователь не найден для обновления с id: {}", request.getId());
+            return new NotFoundException("Пользователь не найден для обновления с id: " + request.getId());
+        });
         updatedUser = userJdbcStorage.update(updatedUser);
         log.info("Пользователь после обновления: {}", updatedUser);
         return UserMapper.mapToUserDto(updatedUser);
@@ -122,9 +115,7 @@ public class UserService {
         });
         List<User> friends = userJdbcStorage.getFriends(userId);
         log.info("Пользователь с id: {} имеет {} друзей", userId, friends.size());
-        return friends.stream()
-                .map(UserMapper::mapToUserDto)
-                .collect(Collectors.toList());
+        return friends.stream().map(UserMapper::mapToUserDto).collect(Collectors.toList());
     }
 
     public List<UserDto> getCommonFriends(Long userId, Long otherUserId) {
@@ -139,9 +130,7 @@ public class UserService {
         });
         List<User> commonFriends = userJdbcStorage.getCommonFriends(userId, otherUserId);
         log.info("Общих друзей найдено: {}", commonFriends.size());
-        return commonFriends.stream()
-                .map(UserMapper::mapToUserDto)
-                .collect(Collectors.toList());
+        return commonFriends.stream().map(UserMapper::mapToUserDto).collect(Collectors.toList());
     }
 
     public List<Event> getFeed(long userId) {
@@ -153,8 +142,8 @@ public class UserService {
         return eventRepository.getUsersEventListOnId(userId);
     }
 
-    public void deleteUser(Long userId){
-        log.info("Удаление user с id: {}" ,userId);
+    public void deleteUser(Long userId) {
+        log.info("Удаление user с id: {}", userId);
         userJdbcStorage.findById(userId).orElseThrow(() -> {
             log.warn("Пользователь не найден с id: {}", userId);
             return new NotFoundException("Пользователь не найден с id: " + userId);
