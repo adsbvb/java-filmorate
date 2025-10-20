@@ -130,7 +130,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                     FROM film_likes l
                     LEFT JOIN films f ON f.id = l.film_id
                     LEFT JOIN film_genres g ON f.id = g.film_id
-                    WHERE f.id IS NOT NULL 
+                    WHERE f.id IS NOT NULL
                     AND g.genre_id = ?
                     GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
                     ORDER BY COUNT(l.user_id) DESC
