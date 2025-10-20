@@ -36,6 +36,9 @@ public class FilmService {
         this.userJdbcStorage = userJdbcStorage;
         this.genreJdbcStorage = genreJdbcStorage;
         this.mpaJdbcStorage = mpaJdbcStorage;
+        this.directorJdbcStorage = directorJdbcStorage;
+        this.filmDirectorRepository = filmDirectorRepository;
+        this.eventRepository = eventRepository;
     }
 
     public FilmDto createFilm(NewFilmRequest request) {
