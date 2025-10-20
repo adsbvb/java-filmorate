@@ -24,6 +24,9 @@ public class UserJdbcStorage extends BaseRepository<User> implements UserStorage
             "SELECT f2.friend_id FROM friends f2 WHERE f2.user_id = ?" +
             ")";
     private static final String DELETE_QUERY = "DELETE FROM users WHERE id = ?";
+    private static final String DELETE_USER_FRIENDS_QUERY = "DELETE FROM friends WHERE user_id = ? OR friend_id = ?";
+    private static final String DELETE_USER_LIKES_QUERY = "DELETE FROM film_likes WHERE user_id = ?";
+    private static final String DELETE_USER_EVENTS_QUERY = "DELETE FROM events WHERE user_id = ?";
 
 
     public UserJdbcStorage(JdbcTemplate jdbcTemplate, RowMapper<User> mapper) {
@@ -102,5 +105,20 @@ public class UserJdbcStorage extends BaseRepository<User> implements UserStorage
     @Override
     public void deleteUser(Long id) {
         update(DELETE_QUERY, id);
+    }
+
+    @Override
+    public void deleteUserFriends(Long userId) {
+        update(DELETE_USER_FRIENDS_QUERY, userId, userId);
+    }
+
+    @Override
+    public void deleteUserLikes(Long userId) {
+        update(DELETE_USER_LIKES_QUERY, userId);
+    }
+
+    @Override
+    public void deleteUserEvents(Long userId) {
+        update(DELETE_USER_EVENTS_QUERY, userId);
     }
 }

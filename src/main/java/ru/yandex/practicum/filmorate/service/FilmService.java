@@ -211,6 +211,10 @@ public class FilmService {
             log.warn("Не найден фильм с id : " + filmId);
             return new NotFoundException("Фильм с id " + filmId + " найден:");
         });
+        filmJdbcStorage.deleteFilmLikes(filmId);
+        filmJdbcStorage.deleteFilmGenres(filmId);
+        filmJdbcStorage.deleteFilmDirectors(filmId);
+        filmJdbcStorage.deleteFilmEvents(filmId);
         filmJdbcStorage.deleteFilm(filmId);
         log.info("Удален фильм с id : {}", filmId);
     }

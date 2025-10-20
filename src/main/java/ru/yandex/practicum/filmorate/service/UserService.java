@@ -148,6 +148,9 @@ public class UserService {
             log.warn("Пользователь не найден с id: {}", userId);
             return new NotFoundException("Пользователь не найден с id: " + userId);
         });
+        userJdbcStorage.deleteUserEvents(userId);
+        userJdbcStorage.deleteUserFriends(userId);
+        userJdbcStorage.deleteUserLikes(userId);
         userJdbcStorage.deleteUser(userId);
         log.info("Пользователь с id : {} успешно удален", userId);
     }

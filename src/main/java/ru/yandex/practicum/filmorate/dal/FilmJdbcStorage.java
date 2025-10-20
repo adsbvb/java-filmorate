@@ -41,6 +41,10 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
             AND f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?)
             ORDER BY fl.like_count DESC
             """;
+    private static final String DELETE_FILM_LIKES_QUERY = "DELETE FROM film_likes WHERE film_id = ?";
+    private static final String DELETE_FILM_GENRES_QUERY = "DELETE FROM film_genres WHERE film_id = ?";
+    private static final String DELETE_FILM_DIRECTORS_QUERY = "DELETE FROM film_directors WHERE film_id = ?";
+    private static final String DELETE_FILM_EVENTS_QUERY = "DELETE FROM events WHERE entity_id = ? AND event_type = 'LIKE'";
 
     public FilmJdbcStorage(JdbcTemplate jdbcTemplate, RowMapper<Film> mapper) {
         super(jdbcTemplate, mapper);
@@ -252,6 +256,22 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
         update(DELETE_FILM_QUERY, filmId);
     }
 
+    public void deleteFilmLikes(Long filmId) {
+        update(DELETE_FILM_LIKES_QUERY, filmId);
+    }
+
+    public void deleteFilmGenres(Long filmId) {
+        update(DELETE_FILM_GENRES_QUERY, filmId);
+    }
+
+    public void deleteFilmDirectors(Long filmId) {
+        update(DELETE_FILM_DIRECTORS_QUERY, filmId);
+    }
+
+    public void deleteFilmEvents(Long filmId) {
+        update(DELETE_FILM_EVENTS_QUERY, filmId);
+    }
+
 
     private boolean isGenre(int genreId) {
         try {
@@ -261,4 +281,5 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
         }
         return true;
     }
+
 }
