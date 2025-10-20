@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.validation.ReleaseDateConstraint;
@@ -30,5 +31,5 @@ public class NewFilmRequest {
     Integer duration;
     Set<Genre> genres;
     Mpa mpa;
-    Set<Long> directorsId;
+    Set<Director> directors;
 }

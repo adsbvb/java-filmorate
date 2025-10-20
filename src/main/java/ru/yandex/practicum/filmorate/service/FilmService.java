@@ -40,10 +40,12 @@ public class FilmService {
 
     public FilmDto createFilm(NewFilmRequest request) {
         log.info("Создание нового фильма с данными: {}", request);
-        Film film = FilmMapper.mapToFilm(request);
-        film = filmJdbcStorage.save(film);
+
+        Film film = filmJdbcStorage.save(FilmMapper.mapToFilm(request));
         genreJdbcStorage.saveFilmGenres(film);
-        filmDirectorRepository.saveFilmDirectors(film.getId(), request.getDirectorsId());
+        saveFilmDirectorsIfPresent(request, film.getId());
+        loadAllFilmRelations(film);
+
         log.info("Фильм успешно создан с id: {}", film.getId());
         return FilmMapper.mapToFilmDto(film);
     }
@@ -163,5 +165,38 @@ public class FilmService {
         return genreJdbcStorage.getGenresByFilms(commonFilms).stream()
                 .map(FilmMapper::mapToFilmDto)
                 .toList();
+    }
+
+    public List<FilmDto> searchFilms(String query, String by) {
+        log.info("Поиск '{}' по критерию: {}", query, by);
+        List<Film> searchResult = filmJdbcStorage.searchFilms(query, by);
+        log.info("Найдено {} фильмов", searchResult.size());
+        for (Film film : searchResult) {
+            filmDirectorRepository.loadFilmDirectors(film);
+            log.debug("Загружены режиссеры для фильма {}: {}", film.getId(), film.getDirectors());
+        }
+        searchResult = genreJdbcStorage.getGenresByFilms(searchResult);
+
+        return searchResult.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .toList();
+    }
+
+    private void saveFilmDirectorsIfPresent(NewFilmRequest request, Long filmId) {
+        Optional.ofNullable(request.getDirectors())
+                .filter(directors -> !directors.isEmpty())
+                .map(directors -> directors.stream()
+                        .map(Director::getId)
+                        .collect(Collectors.toSet()))
+                .ifPresent(directorIds -> {
+                    filmDirectorRepository.saveFilmDirectors(filmId, directorIds);
+                    log.info("Сохранены режиссеры для фильма {}: {}", filmId, directorIds);
+                });
+    }
+
+    private void loadAllFilmRelations(Film film) {
+        filmDirectorRepository.loadFilmDirectors(film);
+        genreJdbcStorage.loadFilmGenres(film);
+        mpaJdbcStorage.loadFilmMpa(film);
     }
 }
