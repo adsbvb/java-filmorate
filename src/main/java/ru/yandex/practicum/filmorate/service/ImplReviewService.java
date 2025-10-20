@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.EventRepository;
 import ru.yandex.practicum.filmorate.dal.ReviewRepository;
 import ru.yandex.practicum.filmorate.dto.NewReviewRequest;
 import ru.yandex.practicum.filmorate.dto.ReviewDto;
@@ -17,10 +18,12 @@ import java.util.List;
 @Service
 public class ImplReviewService implements ReviewService {
     private final ReviewRepository reviewJdbcStorage;
+    private final EventRepository eventRepository;
 
     @Autowired
-    public ImplReviewService(ReviewRepository reviewJdbcStorage) {
+    public ImplReviewService(ReviewRepository reviewJdbcStorage, EventRepository eventRepository) {
         this.reviewJdbcStorage = reviewJdbcStorage;
+        this.eventRepository = eventRepository;
     }
 
     @Override
@@ -29,6 +32,7 @@ public class ImplReviewService implements ReviewService {
         Review review = ReviewMapper.mapToReview(request);
         review.setUseful(0);
         review = reviewJdbcStorage.addReview(review);
+        eventRepository.addEvent(request.getUserId(), "REVIEW", "ADD", review.getReviewId());
         log.info("Review successfully created with id: {}", review.getReviewId());
         return ReviewMapper.mapToReviewDto(review);
     }
@@ -46,16 +50,20 @@ public class ImplReviewService implements ReviewService {
                     return new NotFoundException("Not found for update review with id {}: " + request.getReviewId());
                 });
         updatedReview = reviewJdbcStorage.updateReview(updatedReview);
+        eventRepository.addEvent(request.getUserId(), "REVIEW", "UPDATE", updatedReview.getReviewId());
         log.info("Review with id {} updated successfully", updatedReview.getReviewId());
         return ReviewMapper.mapToReviewDto(updatedReview);
     }
 
     @Override
     public void deleteReviewById(Long id) {
+        Long userId = reviewJdbcStorage.findById(id).orElseThrow(() ->
+                new NotFoundException("Review with id " + id + " not found")).getUserId();
         boolean deleted = reviewJdbcStorage.deleteReview(id);
         if (!deleted) {
             throw new NotFoundException("Review with id " + id + " not found");
         }
+        eventRepository.addEvent(userId, "REVIEW", "REMOVE", id);
         log.info("Review with id {} deleted successfully", id);
     }
 

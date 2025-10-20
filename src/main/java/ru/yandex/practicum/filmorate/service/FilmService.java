@@ -26,16 +26,19 @@ public class FilmService {
     private final MpaJdbcStorage mpaJdbcStorage;
     private final DirectorJdbcStorage directorJdbcStorage;
     private final FilmDirectorRepository filmDirectorRepository;
+    private final EventRepository eventRepository;
 
     @Autowired
     public FilmService(FilmJdbcStorage filmJdbcStorage, UserJdbcStorage userJdbcStorage, GenreJdbcStorage genreJdbcStorage, MpaJdbcStorage mpaJdbcStorage,
-                       DirectorJdbcStorage directorJdbcStorage, FilmDirectorRepository filmDirectorRepository) {
+                       DirectorJdbcStorage directorJdbcStorage,
+                       FilmDirectorRepository filmDirectorRepository, EventRepository eventRepository) {
         this.filmJdbcStorage = filmJdbcStorage;
         this.userJdbcStorage = userJdbcStorage;
         this.genreJdbcStorage = genreJdbcStorage;
         this.mpaJdbcStorage = mpaJdbcStorage;
         this.directorJdbcStorage = directorJdbcStorage;
         this.filmDirectorRepository = filmDirectorRepository;
+        this.eventRepository = eventRepository;
     }
 
     public FilmDto createFilm(NewFilmRequest request) {
@@ -121,6 +124,7 @@ public class FilmService {
             log.warn("Пользователь с id {} не найден при добавлении лайка", userId);
             return new NotFoundException("Пользователь не найден при добавлении лайка с id: " + userId);
         });
+        eventRepository.addEvent(userId, "LIKE", "ADD", filmId);
         return filmJdbcStorage.addLike(filmId, userId);
     }
 
@@ -134,6 +138,7 @@ public class FilmService {
             log.warn("Пользователь с id {} не найден при удалении лайка", userId);
             return new NotFoundException("Пользователь не найден при удалении лайка с id: " + userId);
         });
+        eventRepository.addEvent(userId, "LIKE", "REMOVE", filmId);
         return filmJdbcStorage.removeLike(filmId, userId);
     }
 

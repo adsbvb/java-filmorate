@@ -13,6 +13,8 @@ public class UpdateReviewRequest {
     String content;
     @NotNull(message = "Необходимо указать тип отзыва негативный/положительный")
     Boolean isPositive;
+    Long userId;
+    Long filmId;
 
     public boolean hasContent() {
         return ! (content == null || content.isBlank());
