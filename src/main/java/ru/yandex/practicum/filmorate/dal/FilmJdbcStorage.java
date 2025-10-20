@@ -112,53 +112,53 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
         String sql;
         if (genreId != null && year != null && isGenre(genreId)) {
             sql = """
-                SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                FROM film_likes l 
-                LEFT JOIN films f ON f.id = l.film_id 
-                LEFT JOIN film_genres g ON f.id = g.film_id
-                WHERE f.id IS NOT NULL 
-                AND g.genre_id = ? 
-                AND EXTRACT(YEAR FROM PARSEDATETIME(f.release_date, 'yyyy-MM-dd')) = ?
-                GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                ORDER BY COUNT(l.user_id) DESC
-                LIMIT ?
-                """;
+                    SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+                    FROM film_likes l
+                    LEFT JOIN films f ON f.id = l.film_id
+                    LEFT JOIN film_genres g ON f.id = g.film_id
+                    WHERE f.id IS NOT NULL
+                    AND g.genre_id = ?
+                    AND EXTRACT(YEAR FROM PARSEDATETIME(f.release_date, 'yyyy-MM-dd')) = ?
+                    GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+                    ORDER BY COUNT(l.user_id) DESC
+                    LIMIT ?
+                    """;
             return jdbcTemplate.query(sql, mapper, genreId, year, count);
         } else if (genreId != null && isGenre(genreId)) {
             sql = """
-                SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                FROM film_likes l 
-                LEFT JOIN films f ON f.id = l.film_id 
-                LEFT JOIN film_genres g ON f.id = g.film_id
-                WHERE f.id IS NOT NULL 
-                AND g.genre_id = ?
-                GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                ORDER BY COUNT(l.user_id) DESC
-                LIMIT ?
-                """;
+                    SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+                    FROM film_likes l
+                    LEFT JOIN films f ON f.id = l.film_id
+                    LEFT JOIN film_genres g ON f.id = g.film_id
+                    WHERE f.id IS NOT NULL 
+                    AND g.genre_id = ?
+                    GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+                    ORDER BY COUNT(l.user_id) DESC
+                    LIMIT ?
+                    """;
             return jdbcTemplate.query(sql, mapper, genreId, count);
         } else if (year != null) {
             sql = """
+                    SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+                    FROM film_likes l
+                    LEFT JOIN films f ON f.id = l.film_id
+                    WHERE f.id IS NOT NULL
+                    AND EXTRACT(YEAR FROM f.release_date) = ?
+                    GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+                    ORDER BY COUNT(l.user_id) DESC
+                    LIMIT ?
+                    """;
+            return jdbcTemplate.query(sql, mapper, year, count);
+        }
+        sql = """
                 SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                FROM film_likes l 
-                LEFT JOIN films f ON f.id = l.film_id 
-                WHERE f.id IS NOT NULL 
-                AND EXTRACT(YEAR FROM f.release_date) = ?
+                FROM film_likes l
+                LEFT JOIN films f ON f.id = l.film_id
+                WHERE f.id IS NOT NULL
                 GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
                 ORDER BY COUNT(l.user_id) DESC
                 LIMIT ?
                 """;
-            return jdbcTemplate.query(sql, mapper, year, count);
-        }
-        sql = """
-            SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-            FROM film_likes l 
-            LEFT JOIN films f ON f.id = l.film_id 
-            WHERE f.id IS NOT NULL
-            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-            ORDER BY COUNT(l.user_id) DESC
-            LIMIT ?
-            """;
 
         return jdbcTemplate.query(sql, mapper, count);
     }
@@ -223,7 +223,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 String directorName = "%" + query + "%";
                 return findMany(sql, directorName);
             }
-			default -> {
+            default -> {
                 String sql = """
                         SELECT f.id,
                             f.name,
@@ -250,7 +250,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 String param = "%" + query + "%";
                 return findMany(sql, param, param);
             }
-		}
+        }
     }
 
     @Override
