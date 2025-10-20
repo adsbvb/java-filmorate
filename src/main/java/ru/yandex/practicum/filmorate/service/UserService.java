@@ -3,13 +3,15 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
-import ru.yandex.practicum.filmorate.dto.NewUserRequest;
-import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
+import ru.yandex.practicum.filmorate.dal.EventRepository;
 import ru.yandex.practicum.filmorate.dal.UserJdbcStorage;
+import ru.yandex.practicum.filmorate.dto.NewUserRequest;
+import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
@@ -20,10 +22,12 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final UserJdbcStorage userJdbcStorage;
+    private final EventRepository eventRepository;
 
     @Autowired
-    public UserService(UserJdbcStorage userJdbcStorage) {
+    public UserService(UserJdbcStorage userJdbcStorage, EventRepository eventRepository) {
         this.userJdbcStorage = userJdbcStorage;
+        this.eventRepository = eventRepository;
     }
 
     public UserDto getUserById(Long userId) {
@@ -31,7 +35,7 @@ public class UserService {
         UserDto userDto = userJdbcStorage.findById(userId)
                 .map(UserMapper::mapToUserDto)
                 .orElseThrow(() -> {
-                    log.warn("Пользователь не найден с id: {}", userId);;
+                    log.warn("Пользователь не найден с id: {}", userId);
                     return new NotFoundException("Пользователь не найден с id: " + userId);
                 });
         log.info("Найден пользователь: {}", userDto);
@@ -92,26 +96,28 @@ public class UserService {
             return new NotFoundException("Пользователь не найден с id: " + friendId);
         });
         userJdbcStorage.addFriend(userId, friendId);
+        eventRepository.addEvent(userId, "FRIEND", "ADD", friendId);
         log.info("Друг с id: {} успешно добавлен к пользователю с id: {}", friendId, userId);
     }
 
     public boolean removeFriend(Long userId, Long friendId) {
         log.info("Удаление друга с id: {} у пользователя с id: {}", friendId, userId);
         userJdbcStorage.findById(userId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", userId);;
+            log.warn("Пользователь не найден с id: {}", userId);
             return new NotFoundException("Пользователь не найден с id: " + userId);
         });
         userJdbcStorage.findById(friendId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", friendId);;
+            log.warn("Пользователь не найден с id: {}", friendId);
             return new NotFoundException("Пользователь не найден с id: " + friendId);
         });
+        eventRepository.addEvent(userId, "FRIEND", "REMOVE", friendId);
         return userJdbcStorage.removeFriend(userId, friendId);
     }
 
     public List<UserDto> getFriends(Long userId) {
         log.info("Получение друзей пользователя с id: {}", userId);
         User user = userJdbcStorage.findById(userId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", userId);;
+            log.warn("Пользователь не найден с id: {}", userId);
             return new NotFoundException("Пользователь не найден с id: " + userId);
         });
         List<User> friends = userJdbcStorage.getFriends(userId);
@@ -124,11 +130,11 @@ public class UserService {
     public List<UserDto> getCommonFriends(Long userId, Long otherUserId) {
         log.info("Получение общих друзей между пользователями {} и {}", userId, otherUserId);
         userJdbcStorage.findById(userId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", userId);;
+            log.warn("Пользователь не найден с id: {}", userId);
             return new NotFoundException("Пользователь не найден с id: " + userId);
         });
         userJdbcStorage.findById(otherUserId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", otherUserId);;
+            log.warn("Пользователь не найден с id: {}", otherUserId);
             return new NotFoundException("Пользователь не найден с id: " + otherUserId);
         });
         List<User> commonFriends = userJdbcStorage.getCommonFriends(userId, otherUserId);
@@ -136,5 +142,14 @@ public class UserService {
         return commonFriends.stream()
                 .map(UserMapper::mapToUserDto)
                 .collect(Collectors.toList());
+    }
+
+    public List<Event> getFeed(long userId) {
+        log.info("Получение списка событий пользователя с id: {}", userId);
+        User user = userJdbcStorage.findById(userId).orElseThrow(() -> {
+            log.warn("Пользователь не был найден с id: {}", userId);
+            return new NotFoundException("Пользователь не был найден с id: " + userId);
+        });
+        return eventRepository.getUsersEventListOnId(userId);
     }
 }

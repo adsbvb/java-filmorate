@@ -7,12 +7,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.NewUserRequest;
+import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.util.*;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -73,5 +74,11 @@ public class UserController {
     public List<UserDto> getCommonFriends(@PathVariable("id") @Positive Long userId, @PathVariable("other_id") @Positive Long otherUserId) {
         log.info("Получен запрос на получение списка общих друзей пользователя {} и {}", userId, otherUserId);
         return userService.getCommonFriends(userId, otherUserId);
+    }
+
+    @GetMapping("/{id}/feed")
+    public List<Event> getFeed(@PathVariable("id") @Positive Long userId) {
+        log.info("Получен запрос на получение списка событий пользователя {} ", userId);
+        return userService.getFeed(userId);
     }
 }
