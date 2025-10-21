@@ -7,13 +7,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.NewUserRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -80,5 +82,12 @@ public class UserController {
     public List<Event> getFeed(@PathVariable("id") @Positive Long userId) {
         log.info("Получен запрос на получение списка событий пользователя {} ", userId);
         return userService.getFeed(userId);
+    }
+
+    @GetMapping("/{id}/recommendations")
+    @ResponseStatus(HttpStatus.OK)
+    public List<FilmDto> getRecommendations(@PathVariable("id") @Positive Long userId) {
+        log.info("Получен запрос на получения рекомендации фильмов для просмотра для пользователя с id: {}", userId);
+        return userService.getRecommendations(userId);
     }
 }
