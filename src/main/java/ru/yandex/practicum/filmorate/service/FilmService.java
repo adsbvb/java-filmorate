@@ -12,9 +12,7 @@ import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -71,7 +69,11 @@ public class FilmService {
                     .map(Director::getId)
                     .collect(Collectors.toSet());
             filmDirectorRepository.updateFilmDirectors(updatedFilm.getId(), directorsIds);
+        } else {
+            filmDirectorRepository.updateFilmDirectors(updatedFilm.getId(), Collections.emptySet());
         }
+
+        loadAllFilmRelations(updatedFilm);
         log.info("Фильм с id {} обновлен успешно", updatedFilm.getId());
         return FilmMapper.mapToFilmDto(updatedFilm);
     }
@@ -95,6 +97,8 @@ public class FilmService {
     public List<FilmDto> getAllFilms() {
         log.info("Получение списка всех фильмов");
         List<Film> films = filmJdbcStorage.findAll();
+        films = genreJdbcStorage.getGenresByFilms(films);
+        films = mpaJdbcStorage.getMpaByFilms(films);
         films.forEach(filmDirectorRepository::loadFilmDirectors);
         log.info("Найдено {} фильмов", films.size());
         return films.stream()
@@ -132,6 +136,9 @@ public class FilmService {
 
     public boolean removeLike(Long filmId, Long userId) {
         log.info("Удаление лайка: пользователь {} удаляет лайк у фильма {}", userId, filmId);
+        if (userId <= 0) {
+            throw new NotFoundException("Пользователь не найден с id: " + userId);
+        }
         filmJdbcStorage.findById(filmId).orElseThrow(() -> {
             log.warn("Фильм с id {} не найден при удалении лайка", filmId);
             return new NotFoundException("Фильм не найден при удалении лайка с id: " + filmId);
@@ -147,6 +154,11 @@ public class FilmService {
     public List<FilmDto> getPopularFilms(int count, Integer genreId, Integer releaseYear) {
         log.info("Получение {} популярных фильмов", count);
         List<Film> films = filmJdbcStorage.getPopular(genreId, releaseYear, count);
+        films = genreJdbcStorage.getGenresByFilms(films);
+        films.forEach(film -> {
+            mpaJdbcStorage.loadFilmMpa(film);
+            filmDirectorRepository.loadFilmDirectors(film);
+        });
         log.info("Найдено {} популярных фильмов", films.size());
         return films.stream()
                 .map(FilmMapper::mapToFilmDto)
@@ -176,13 +188,25 @@ public class FilmService {
         log.info("Поиск '{}' по критерию: {}", query, by);
         List<Film> searchResult = filmJdbcStorage.searchFilms(query, by);
         log.info("Найдено {} фильмов", searchResult.size());
-        for (Film film : searchResult) {
+        List<Long> originalOrder = searchResult.stream()
+                .map(Film::getId)
+                .collect(Collectors.toList());
+        searchResult = genreJdbcStorage.getGenresByFilms(searchResult);
+        searchResult.forEach(film -> {
+            mpaJdbcStorage.loadFilmMpa(film);
             filmDirectorRepository.loadFilmDirectors(film);
             log.debug("Загружены режиссеры для фильма {}: {}", film.getId(), film.getDirectors());
-        }
-        searchResult = genreJdbcStorage.getGenresByFilms(searchResult);
+        });
 
-        return searchResult.stream()
+        Map<Long, Film> filmMap = searchResult.stream()
+                .collect(Collectors.toMap(Film::getId, film -> film));
+
+        List<Film> orderedResult = originalOrder.stream()
+                .map(filmMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return orderedResult.stream()
                 .map(FilmMapper::mapToFilmDto)
                 .toList();
     }

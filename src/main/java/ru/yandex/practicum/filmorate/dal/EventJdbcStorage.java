@@ -20,6 +20,7 @@ public class EventJdbcStorage extends BaseRepository<Event> implements EventRepo
             SELECT *
             FROM events
             WHERE user_id = ?
+            ORDER BY event_id ASC;
             """;
 
     @Autowired

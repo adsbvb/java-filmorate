@@ -6,8 +6,11 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 public class MpaJdbcStorage extends BaseRepository<Mpa> implements MpaRepository {
@@ -36,5 +39,35 @@ public class MpaJdbcStorage extends BaseRepository<Mpa> implements MpaRepository
                 film.getMpa().setName(mpaName);
             }
         }
+    }
+
+    public List<Film> getMpaByFilms(List<Film> films) {
+        List<Long> filmsId = films.stream().map(Film::getId).toList();
+        Map<Long, Film> filmsMap = films.stream().collect(Collectors.toMap(Film::getId, film -> film));
+
+        if (filmsId.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String idsStr = filmsId.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String filmMpaSql = """
+                SELECT f.id, m.mpa_id, m.name
+                FROM films f 
+                JOIN mpa_ratings m ON f.mpa_id = m.mpa_id 
+                WHERE f.id IN (""" + idsStr + ")";
+
+        jdbcTemplate.query(filmMpaSql, rs -> {
+            Long filmId = rs.getLong("id");
+            Mpa mpa = new Mpa();
+            mpa.setId(rs.getInt("mpa_id"));
+            mpa.setName(rs.getString("name"));
+
+            Film film = filmsMap.get(filmId);
+            if (film != null) {
+                film.setMpa(mpa);
+            }
+        });
+
+        return filmsMap.values().stream().toList();
     }
 }
