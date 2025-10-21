@@ -9,10 +9,13 @@ import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.NewUserRequest;
 import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.dal.UserJdbcStorage;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
@@ -23,11 +26,13 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final UserJdbcStorage userJdbcStorage;
+    private final FilmJdbcStorage filmJdbcStorage;
     private final EventRepository eventRepository;
 
     @Autowired
     public UserService(UserJdbcStorage userJdbcStorage, FilmJdbcStorage filmJdbcStorage, EventRepository eventRepository) {
         this.userJdbcStorage = userJdbcStorage;
+        this.filmJdbcStorage = filmJdbcStorage;
         this.eventRepository = eventRepository;
     }
 
@@ -131,6 +136,15 @@ public class UserService {
             return new NotFoundException("Пользователь не был найден с id: " + userId);
         });
         return eventRepository.getUsersEventListOnId(userId);
+    }
+
+    public List<FilmDto> getRecommendations(Long id) {
+        log.info("Получения списка рекомендаций фильмов для просмотра для пользователя с id: {}", id);
+        List<Film> recommendations = filmJdbcStorage.getRecommendations(id);
+        log.info("Фильмов рекомендовано: {}", recommendations.size());
+        return recommendations.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
     }
 
     public void deleteById(Long id) {

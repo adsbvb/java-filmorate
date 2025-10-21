@@ -24,5 +24,7 @@ public interface FilmRepository {
 
     List<Film> searchFilms(String query, String by);
 
+    List<Film> getRecommendations(Long userId);
+
     void deleteById(Long filmId);
 }
