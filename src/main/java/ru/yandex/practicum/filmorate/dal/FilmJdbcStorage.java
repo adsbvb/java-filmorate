@@ -261,6 +261,20 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
         return true;
     }
 
+    private List<Film> findFilmsByIds(List<Long> filmsIds) {
+        if (filmsIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        String sql = String.format(
+                "SELECT * FROM films WHERE id IN (%s)",
+                filmsIds.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(","))
+        );
+        return jdbcTemplate.query(sql, mapper);
+    }
+
+    @Override
     public List<Film> getRecommendations(Long userId) {
         List<Long> similarUserIds = jdbcTemplate.queryForList(FIND_MOST_COMMON_LIKED_QUERY, Long.class, userId);
         if (similarUserIds.isEmpty()) {
@@ -271,10 +285,6 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
         if (recommendationsFilmIds.isEmpty()) {
             return Collections.emptyList();
         }
-        return recommendationsFilmIds.stream()
-                .map(this::findById)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toList());
+        return findFilmsByIds(recommendationsFilmIds);
     }
 }
