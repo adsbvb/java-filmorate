@@ -6,8 +6,10 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 public class FilmJdbcStorage extends BaseRepository<Film> implements FilmRepository {
@@ -31,6 +33,22 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
             WHERE f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?)
             AND f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?)
             ORDER BY fl.like_count DESC
+            """;
+
+    private static final String FIND_MOST_COMMON_LIKED_QUERY = """
+            SELECT fl2.user_id
+            FROM film_likes AS fl1
+            JOIN film_likes AS fl2 ON fl1.film_id = fl2.film_id AND fl1.user_id != fl2.user_id
+            WHERE fl1.user_id = ?
+            GROUP BY fl2.user_id
+            ORDER BY COUNT(fl2.film_id) DESC
+            LIMIT 1;
+            """;
+
+    private static final String FIND_LIKED_BY_ONE_QUERY = """
+            SELECT film_id FROM film_likes WHERE user_id = ?
+            EXCEPT
+            SELECT film_id FROM film_likes WHERE user_id = ?;
             """;
 
     public FilmJdbcStorage(JdbcTemplate jdbcTemplate, RowMapper<Film> mapper) {
@@ -241,5 +259,22 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
             return false;
         }
         return true;
+    }
+
+    public List<Film> getRecommendations (Long userId) {
+        List<Long> similarUserIds = jdbcTemplate.queryForList(FIND_MOST_COMMON_LIKED_QUERY, Long.class, userId);
+        if (similarUserIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Long similarUserId = similarUserIds.getFirst();
+        List<Long> recommendationsFilmIds = jdbcTemplate.queryForList(FIND_LIKED_BY_ONE_QUERY, Long.class, similarUserId, userId);
+        if (recommendationsFilmIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return recommendationsFilmIds.stream()
+                .map(this::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
     }
 }
