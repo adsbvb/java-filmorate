@@ -159,7 +159,7 @@ public class UserService {
         return eventRepository.getUsersEventListOnId(userId);
     }
 
-    public List<FilmDto> getRecommendations (Long id) {
+    public List<FilmDto> getRecommendations(Long id) {
         log.info("Получения списка рекомендаций фильмов для просмотра для пользователя с id: {}", id);
         List<Film> recommendations = filmJdbcStorage.getRecommendations(id);
         log.info("Фильмов рекомендовано: {}", recommendations.size());
