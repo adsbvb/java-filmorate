@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -96,52 +97,45 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
 
     @Override
     public List<Film> getPopular(Integer genreId, Integer year, int count) {
-        String sql;
-        if (genreId != null && year != null && isGenre(genreId)) {
-            sql = """
-                    SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+        StringBuilder sql = new StringBuilder("""
+                SELECT
+                        f.id,
+                        f.name,
+                        f.description,
+                        f.release_date,
+                        f.duration,
+                        f.mpa_id,
+                        m.name as mpa_name,
+                        COUNT(l.user_id) AS likes_count
                     FROM films f
-                    JOIN film_genres g ON f.id = g.film_id
-                    JOIN film_likes l ON f.id = l.film_id
-                    WHERE g.genre_id = ? AND EXTRACT(YEAR FROM PARSEDATETIME(f.release_date, 'yyyy-MM-dd')) = ?
-                    GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                    ORDER BY COUNT(l.user_id) DESC
-                    LIMIT ?
-                    """;
-            return jdbcTemplate.query(sql, mapper, genreId, year, count);
-        } else if (genreId != null && isGenre(genreId)) {
-            sql = """
-                      SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                      FROM films f
-                      JOIN film_genres g ON f.id = g.film_id
-                      JOIN film_likes l ON f.id = l.film_id
-                      WHERE g.genre_id = ?
-                      GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                      ORDER BY COUNT(l.user_id) DESC
-                      LIMIT ?
-                    """;
-            return jdbcTemplate.query(sql, mapper, genreId, count);
-        } else if (year != null) {
-            sql = """
-                    SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                    FROM films f
-                    JOIN film_likes l ON f.id = l.film_id
-                    WHERE EXTRACT(YEAR FROM f.release_date) = ?
-                    GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                    ORDER BY COUNT(l.user_id) DESC
-                    LIMIT ?
-                    """;
-            return jdbcTemplate.query(sql, mapper, year, count);
+                    LEFT JOIN film_likes l ON f.id = l.film_id
+                    LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
+                """);
+        List<Object> params = new ArrayList<>();
+
+        if (genreId != null && genreId > 0) {
+            sql.append(" INNER JOIN film_genres fg ON f.id = fg.film_id");
         }
-        sql = """
-                SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                FROM films f
-                JOIN film_likes l ON f.id = l.film_id
-                GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
-                ORDER BY COUNT(l.user_id) DESC
-                LIMIT ?
-                """;
-        return jdbcTemplate.query(sql, mapper, count);
+
+        sql.append(" WHERE 1=1");
+
+        if (genreId != null && genreId > 0) {
+            sql.append(" AND fg.genre_id = ?");
+            params.add(genreId);
+        }
+
+        if (year != null && year > 0) {
+            sql.append(" AND EXTRACT(YEAR FROM f.release_date) = ?");
+            params.add(year);
+        }
+        sql.append(" GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name");
+        sql.append(" ORDER BY likes_count DESC, f.id ASC");
+
+        sql.append(" LIMIT ?");
+        params.add(count);
+
+        List<Film> result = jdbcTemplate.query(sql.toString(), mapper, params.toArray());
+        return result;
     }
 
     @Override
