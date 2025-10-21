@@ -261,7 +261,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
         return true;
     }
 
-    public List<Film> getRecommendations (Long userId) {
+    public List<Film> getRecommendations(Long userId) {
         List<Long> similarUserIds = jdbcTemplate.queryForList(FIND_MOST_COMMON_LIKED_QUERY, Long.class, userId);
         if (similarUserIds.isEmpty()) {
             return Collections.emptyList();
