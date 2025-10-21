@@ -204,4 +204,17 @@ public class FilmService {
         genreJdbcStorage.loadFilmGenres(film);
         mpaJdbcStorage.loadFilmMpa(film);
     }
+
+    public void deleteById(Long id) {
+        getFilmOrThrow(id);
+        filmJdbcStorage.deleteById(id);
+        log.info("Удален фильм с id: {}", id);
+    }
+
+    private void getFilmOrThrow(Long filmId) {
+        filmJdbcStorage.findById(filmId).orElseThrow(() -> {
+            log.warn("Фильм с id {} не найден", filmId);
+            return new NotFoundException("Фильм не найден с id: " + filmId);
+        });
+    }
 }

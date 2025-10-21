@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS events (
     event_type VARCHAR(20) NOT NULL,
     operation VARCHAR(25) NOT NULL,
     entity_id INTEGER NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS mpa_ratings (
@@ -54,15 +54,15 @@ CREATE TABLE IF NOT EXISTS films (
     release_date DATE NOT NULL,
     duration INT,
     mpa_id INT,
-    FOREIGN KEY (mpa_id) REFERENCES mpa_ratings(mpa_id)
+    FOREIGN KEY (mpa_id) REFERENCES mpa_ratings(mpa_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS film_genres (
     film_id BIGINT NOT NULL,
     genre_id INT NOT NULL,
     PRIMARY KEY (film_id, genre_id),
-    FOREIGN KEY (film_id) REFERENCES films(id),
-    FOREIGN KEY (genre_id) REFERENCES genres(genre_id)
+    FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE,
+    FOREIGN KEY (genre_id) REFERENCES genres(genre_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS directors (
@@ -93,8 +93,8 @@ CREATE TABLE IF NOT EXISTS reviews (
     user_id BIGINT NOT NULL,
     film_id BIGINT NOT NULL,
     useful INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (film_id) REFERENCES films(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS review_likes_dislikes (

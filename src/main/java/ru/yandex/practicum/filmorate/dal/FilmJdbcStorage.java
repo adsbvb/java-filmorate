@@ -242,4 +242,10 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
         }
         return true;
     }
+
+    @Override
+    public void deleteById(Long filmId) {
+        String sql = "DELETE FROM films WHERE id = ?";
+        jdbcTemplate.update(sql, filmId);
+    }
 }

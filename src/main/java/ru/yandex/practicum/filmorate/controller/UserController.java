@@ -81,4 +81,11 @@ public class UserController {
         log.info("Получен запрос на получение списка событий пользователя {} ", userId);
         return userService.getFeed(userId);
     }
+
+    @DeleteMapping("/{user_id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable("user_id") @Positive Long userId) {
+        log.info("Получен запрос на удаление пользователя с id: {}", userId);
+        userService.deleteById(userId);
+    }
 }
