@@ -52,8 +52,8 @@ public class MpaJdbcStorage extends BaseRepository<Mpa> implements MpaRepository
         String idsStr = filmsId.stream().map(String::valueOf).collect(Collectors.joining(","));
         String filmMpaSql = """
                 SELECT f.id, m.mpa_id, m.name
-                FROM films f 
-                JOIN mpa_ratings m ON f.mpa_id = m.mpa_id 
+                FROM films f
+                JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
                 WHERE f.id IN (""" + idsStr + ")";
 
         jdbcTemplate.query(filmMpaSql, rs -> {
