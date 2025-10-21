@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.NewUserRequest;
-import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.service.UserService;
@@ -89,5 +88,12 @@ public class UserController {
     public List<FilmDto> getRecommendations(@PathVariable("id") @Positive Long userId) {
         log.info("Получен запрос на получения рекомендации фильмов для просмотра для пользователя с id: {}", userId);
         return userService.getRecommendations(userId);
+    }
+
+    @DeleteMapping("/{user_id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable("user_id") @Positive Long userId) {
+        log.info("Получен запрос на удаление пользователя с id: {}", userId);
+        userService.deleteById(userId);
     }
 }

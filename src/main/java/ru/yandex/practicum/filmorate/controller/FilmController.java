@@ -58,7 +58,7 @@ public class FilmController {
                                     @RequestParam(required = false) @Min(value = 1895,
                                             message = "Фильм должен быть выпущен после 1895") Integer year) {
         log.info("Получен запрос на получение списка популярных фильмов ТОП-{}", count);
-        return filmService.getPopularFilms(count,genreId, year);
+        return filmService.getPopularFilms(count, genreId, year);
     }
 
     @PutMapping("/{film_id}/like/{id}")
@@ -79,9 +79,9 @@ public class FilmController {
         return filmService.getCommonFilm(userId, friendId);
     }
 
-    @GetMapping("/director/{directorId}")
+    @GetMapping("/director/{director_id}")
     public List<FilmDto> getFilmsByDirector(
-            @PathVariable Long directorId,
+            @PathVariable("director_id") Long directorId,
             @RequestParam(defaultValue = "year") String sortBy) {
 
         log.trace("Получен запрос на получение фильмов режиссера {} с сортировкой по {}", directorId, sortBy);
@@ -98,5 +98,12 @@ public class FilmController {
         log.trace("Получен запрос на поиск фильмов. Строка поиска: {}, поиск по {}", query, by);
 
         return filmService.searchFilms(query, by);
+    }
+
+    @DeleteMapping("/{film_id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFilm(@PathVariable("film_id") @Positive Long filmId) {
+        log.info("Получен запрос на удаление фильма с id: {}", filmId);
+        filmService.deleteById(filmId);
     }
 }

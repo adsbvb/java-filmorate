@@ -50,6 +50,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
             EXCEPT
             SELECT film_id FROM film_likes WHERE user_id = ?;
             """;
+    private static final String DELETE_BY_ID_QUERY = "DELETE FROM films WHERE id = ?";
 
     public FilmJdbcStorage(JdbcTemplate jdbcTemplate, RowMapper<Film> mapper) {
         super(jdbcTemplate, mapper);
@@ -286,5 +287,10 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
             return Collections.emptyList();
         }
         return findFilmsByIds(recommendationsFilmIds);
+    }
+
+    @Override
+    public void deleteById(Long filmId) {
+        jdbcTemplate.update(DELETE_BY_ID_QUERY, filmId);
     }
 }

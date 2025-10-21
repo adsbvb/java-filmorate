@@ -93,14 +93,8 @@ public class UserService {
 
     public void addFriend(Long userId, Long friendId) {
         log.info("Добавление друга с id: {} для пользователя с id: {}", friendId, userId);
-        userJdbcStorage.findById(userId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", userId);
-            return new NotFoundException("Пользователь не найден с id: " + userId);
-        });
-        userJdbcStorage.findById(friendId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", friendId);
-            return new NotFoundException("Пользователь не найден с id: " + friendId);
-        });
+        getUserOrThrow(userId);
+        getUserOrThrow(friendId);
         userJdbcStorage.addFriend(userId, friendId);
         eventRepository.addEvent(userId, "FRIEND", "ADD", friendId);
         log.info("Друг с id: {} успешно добавлен к пользователю с id: {}", friendId, userId);
@@ -108,24 +102,15 @@ public class UserService {
 
     public boolean removeFriend(Long userId, Long friendId) {
         log.info("Удаление друга с id: {} у пользователя с id: {}", friendId, userId);
-        userJdbcStorage.findById(userId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", userId);
-            return new NotFoundException("Пользователь не найден с id: " + userId);
-        });
-        userJdbcStorage.findById(friendId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", friendId);
-            return new NotFoundException("Пользователь не найден с id: " + friendId);
-        });
+        getUserOrThrow(userId);
+        getUserOrThrow(friendId);
         eventRepository.addEvent(userId, "FRIEND", "REMOVE", friendId);
         return userJdbcStorage.removeFriend(userId, friendId);
     }
 
     public List<UserDto> getFriends(Long userId) {
         log.info("Получение друзей пользователя с id: {}", userId);
-        User user = userJdbcStorage.findById(userId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", userId);
-            return new NotFoundException("Пользователь не найден с id: " + userId);
-        });
+        User user = getUserOrThrow(userId);
         List<User> friends = userJdbcStorage.getFriends(userId);
         log.info("Пользователь с id: {} имеет {} друзей", userId, friends.size());
         return friends.stream()
@@ -135,14 +120,8 @@ public class UserService {
 
     public List<UserDto> getCommonFriends(Long userId, Long otherUserId) {
         log.info("Получение общих друзей между пользователями {} и {}", userId, otherUserId);
-        userJdbcStorage.findById(userId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", userId);
-            return new NotFoundException("Пользователь не найден с id: " + userId);
-        });
-        userJdbcStorage.findById(otherUserId).orElseThrow(() -> {
-            log.warn("Пользователь не найден с id: {}", otherUserId);
-            return new NotFoundException("Пользователь не найден с id: " + otherUserId);
-        });
+        getUserOrThrow(userId);
+        getUserOrThrow(otherUserId);
         List<User> commonFriends = userJdbcStorage.getCommonFriends(userId, otherUserId);
         log.info("Общих друзей найдено: {}", commonFriends.size());
         return commonFriends.stream()
@@ -166,5 +145,18 @@ public class UserService {
         return recommendations.stream()
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());
+    }
+
+    public void deleteById(Long id) {
+        getUserOrThrow(id);
+        userJdbcStorage.deleteById(id);
+        log.info("Удален пользователь с id: {}", id);
+    }
+
+    private User getUserOrThrow(Long userId) {
+        return userJdbcStorage.findById(userId).orElseThrow(() -> {
+            log.warn("Пользователь не найден с id: {}", userId);
+            return new NotFoundException("Пользователь не найден с id: " + userId);
+        });
     }
 }
