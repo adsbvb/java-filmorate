@@ -123,7 +123,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     }
 
     @Override
-    public List<Film> getPopular(Integer genreId, Integer year, int count) {
+    public List<Film> getPopular(int count, Integer genreId, Integer year) {
         StringBuilder sql = new StringBuilder("""
         SELECT
             f.id,
@@ -159,7 +159,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
         sql.append(" LIMIT ?");
         params.add(count);
 
-        log.info("Executing popular films query: {}", sql.toString());
+        log.info("Executing popular films query: {}", sql);
         log.info("With params: {}", params);
 
         List<Film> result = jdbcTemplate.query(sql.toString(), mapper, params.toArray());

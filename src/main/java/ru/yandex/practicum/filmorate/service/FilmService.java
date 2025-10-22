@@ -153,7 +153,7 @@ public class FilmService {
 
     public List<FilmDto> getPopularFilms(int count, Integer genreId, Integer releaseYear) {
         log.info("Получение {} популярных фильмов", count);
-        List<Film> films = filmJdbcStorage.getPopular(genreId, releaseYear, count);
+        List<Film> films = filmJdbcStorage.getPopular(count, genreId, releaseYear);
         films = genreJdbcStorage.getGenresByFilms(films);
         films.forEach(film -> {
             mpaJdbcStorage.loadFilmMpa(film);
