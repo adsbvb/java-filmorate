@@ -12,12 +12,9 @@ import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
-import ru.yandex.practicum.filmorate.model.Event;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -150,10 +147,8 @@ public class UserService {
         List<Film> recommendations = filmJdbcStorage.getRecommendations(id);
         if (!recommendations.isEmpty()) {
             recommendations = genreJdbcStorage.getGenresByFilms(recommendations);
-            recommendations.forEach(film -> {
-                mpaJdbcStorage.loadFilmMpa(film);
-                filmDirectorRepository.loadFilmDirectors(film);
-            });
+            recommendations = mpaJdbcStorage.getMpaByFilms(recommendations);
+            recommendations = filmDirectorRepository.getDirectorByFilms(recommendations);
         }
         log.info("Фильмов рекомендовано: {}", recommendations.size());
         return recommendations.stream()

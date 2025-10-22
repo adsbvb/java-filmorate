@@ -9,12 +9,7 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.HashMap;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -36,10 +31,11 @@ public class FilmDirectorJdbcStorage implements FilmDirectorRepository {
     public void saveFilmDirectors(Long filmId, Set<Long> directorIds) {
         log.info("Сохранение режиссеров для фильма {}: {}", filmId, directorIds);
         jdbcTemplate.update(DELETE_FILM_DIRECTORS_QUERY, filmId);
+        List<Object[]> batchList = new ArrayList<>();
         for (Long directorId : directorIds) {
-            jdbcTemplate.update(INSERT_FILM_DIRECTORS_QUERY, filmId, directorId);
-            log.debug("Связь фильм-режиссер: filmId={}, directorId={}", filmId, directorId);
+            batchList.add(new Object[]{filmId, directorId});
         }
+        jdbcTemplate.batchUpdate(INSERT_FILM_DIRECTORS_QUERY, batchList);
     }
 
     @Override
@@ -157,5 +153,22 @@ public class FilmDirectorJdbcStorage implements FilmDirectorRepository {
         } else {
             return " ORDER BY f.id";
         }
+    }
+
+    @Override
+    public List<Film> getDirectorByFilms(List<Film> films) {
+        List<Long> filmIds = films.stream()
+                .map(Film::getId)
+                .toList();
+        Map<Long, Set<Director>> directorsMap = loadDirectorsForFilms(filmIds);
+        for (Film film : films) {
+            Set<Director> directors = directorsMap.get(film.getId());
+            if (directors != null) {
+                film.setDirectors(directors);
+            } else {
+                film.setDirectors(Collections.emptySet());
+            }
+        }
+        return films;
     }
 }

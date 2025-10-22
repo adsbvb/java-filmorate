@@ -15,4 +15,6 @@ public interface FilmDirectorRepository {
     void loadFilmDirectors(Film film);
 
     List<Film> findFilmsByDirectorId(Long directorId, String sortBy);
+
+    List<Film> getDirectorByFilms(List<Film> films);
 }

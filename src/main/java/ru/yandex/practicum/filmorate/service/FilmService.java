@@ -99,7 +99,7 @@ public class FilmService {
         List<Film> films = filmJdbcStorage.findAll();
         films = genreJdbcStorage.getGenresByFilms(films);
         films = mpaJdbcStorage.getMpaByFilms(films);
-        films.forEach(filmDirectorRepository::loadFilmDirectors);
+        films = filmDirectorRepository.getDirectorByFilms(films);
         log.info("Найдено {} фильмов", films.size());
         return films.stream()
                 .map(FilmMapper::mapToFilmDto)
@@ -155,10 +155,8 @@ public class FilmService {
         log.info("Получение {} популярных фильмов", count);
         List<Film> films = filmJdbcStorage.getPopular(count, genreId, releaseYear);
         films = genreJdbcStorage.getGenresByFilms(films);
-        films.forEach(film -> {
-            mpaJdbcStorage.loadFilmMpa(film);
-            filmDirectorRepository.loadFilmDirectors(film);
-        });
+        films = mpaJdbcStorage.getMpaByFilms(films);
+        films = filmDirectorRepository.getDirectorByFilms(films);
         log.info("Найдено {} популярных фильмов", films.size());
         return films.stream()
                 .map(FilmMapper::mapToFilmDto)
@@ -190,13 +188,11 @@ public class FilmService {
         log.info("Найдено {} фильмов", searchResult.size());
         List<Long> originalOrder = searchResult.stream()
                 .map(Film::getId)
-                .collect(Collectors.toList());
+                .toList();
+
         searchResult = genreJdbcStorage.getGenresByFilms(searchResult);
-        searchResult.forEach(film -> {
-            mpaJdbcStorage.loadFilmMpa(film);
-            filmDirectorRepository.loadFilmDirectors(film);
-            log.debug("Загружены режиссеры для фильма {}: {}", film.getId(), film.getDirectors());
-        });
+        searchResult = mpaJdbcStorage.getMpaByFilms(searchResult);
+        searchResult = filmDirectorRepository.getDirectorByFilms(searchResult);
 
         Map<Long, Film> filmMap = searchResult.stream()
                 .collect(Collectors.toMap(Film::getId, film -> film));
@@ -204,7 +200,7 @@ public class FilmService {
         List<Film> orderedResult = originalOrder.stream()
                 .map(filmMap::get)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
 
         return orderedResult.stream()
                 .map(FilmMapper::mapToFilmDto)

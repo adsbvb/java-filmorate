@@ -22,110 +22,78 @@ public class ReviewJdbcStorage extends BaseRepository<Review> implements ReviewR
     @Override
     public Optional<Review> findById(Long id) {
         String sql = "SELECT * FROM reviews WHERE review_id = ? ORDER BY review_id ASC";
-        try {
-            return findOne(sql, id);
-        } catch (InternalServerException e) {
-            throw new InternalServerException(e.getMessage());
-        }
+        return findOne(sql, id);
     }
 
     @Override
     public Review addReview(Review review) {
         String sql = "INSERT INTO reviews (content, is_positive, user_id, film_id, useful) " +
                 " VALUES (?, ?, ?, ?, ?)";
-        try {
-            Long reviewId = insert(
-                    sql,
-                    review.getContent(),
-                    review.getIsPositive(),
-                    review.getUserId(),
-                    review.getFilmId(),
-                    review.getUseful()
-            );
-            log.info("Generated review_id: {}", reviewId);
-            review.setReviewId(reviewId);
-            return review;
-        } catch (InternalServerException e) {
-            throw new InternalServerException(e.getMessage());
-        }
+        Long reviewId = insert(
+                sql,
+                review.getContent(),
+                review.getIsPositive(),
+                review.getUserId(),
+                review.getFilmId(),
+                review.getUseful()
+        );
+        log.info("Generated review_id: {}", reviewId);
+        review.setReviewId(reviewId);
+        return review;
     }
 
     @Override
     public Review updateReview(Review review) {
         String sql = "UPDATE reviews SET content = ?, is_positive = ?, useful = ? WHERE review_id = ?";
-        try {
-            Long reviewId = review.getReviewId();
-            update(
-                    sql,
-                    review.getContent(),
-                    review.getIsPositive(),
-                    review.getUseful(),
-                    reviewId
-            );
-            return review;
-        } catch (InternalServerException e) {
-            throw new InternalServerException(e.getMessage());
-        }
+        Long reviewId = review.getReviewId();
+        update(
+                sql,
+                review.getContent(),
+                review.getIsPositive(),
+                review.getUseful(),
+                reviewId
+        );
+        return review;
     }
 
     @Override
     public boolean deleteReview(Long id) {
         String sql = "DELETE FROM reviews WHERE review_id = ?";
-        try {
-            int rows = jdbcTemplate.update(sql, id);
-            return rows > 0;
-        } catch (InternalServerException e) {
-            throw new InternalServerException(e.getMessage());
-        }
+        int rows = jdbcTemplate.update(sql, id);
+        return rows > 0;
     }
 
     @Override
     public List<Review> findReviews(Long filmId, int limit) {
         StringBuilder sql = new StringBuilder("SELECT * FROM reviews");
-        try {
-            if (filmId != null) {
-                sql.append(" WHERE film_id = ?");
-            }
-            sql.append(" ORDER BY useful DESC, review_id ASC LIMIT ?");
-            if (filmId != null) {
-                return jdbcTemplate.query(sql.toString(), new Object[]{filmId, limit}, mapper);
-            } else {
-                return jdbcTemplate.query(sql.toString(), new Object[]{limit}, mapper);
-            }
-        } catch (InternalServerException e) {
-            throw new InternalServerException(e.getMessage());
+        if (filmId != null) {
+            sql.append(" WHERE film_id = ?");
+        }
+        sql.append(" ORDER BY useful DESC, review_id ASC LIMIT ?");
+        if (filmId != null) {
+            return jdbcTemplate.query(sql.toString(), new Object[]{filmId, limit}, mapper);
+        } else {
+            return jdbcTemplate.query(sql.toString(), new Object[]{limit}, mapper);
         }
     }
 
     @Override
     public void addLikeDislike(Long reviewId, Long userId, boolean isLike) {
         String sql = "MERGE INTO review_likes_dislikes (review_id, user_id, is_like) KEY (review_id, user_id) VALUES (?, ?, ?)";
-        try {
-            jdbcTemplate.update(sql, reviewId, userId, isLike);
-            refreshUseful(reviewId);
-        } catch (InternalServerException e) {
-            throw new InternalServerException(e.getMessage());
-        }
+        jdbcTemplate.update(sql, reviewId, userId, isLike);
+        refreshUseful(reviewId);
     }
 
     @Override
     public void removeLikeDislike(Long reviewId, Long userId, boolean isLike) {
         String sql = "DELETE FROM review_likes_dislikes WHERE review_id = ? AND user_id = ? AND is_like = ?";
-        try {
-            jdbcTemplate.update(sql, reviewId, userId, isLike);
-            refreshUseful(reviewId);
-        } catch (InternalServerException e) {
-            throw new InternalServerException(e.getMessage());
-        }
+        jdbcTemplate.update(sql, reviewId, userId, isLike);
+        refreshUseful(reviewId);
     }
 
     private void updateUseful(Long reviewId, int useful) {
         String sql = "UPDATE reviews SET useful = ? WHERE review_id = ?";
-        try {
-            jdbcTemplate.update(sql, useful, reviewId);
-        } catch (InternalServerException e) {
-            throw new InternalServerException(e.getMessage());
-        }
+        jdbcTemplate.update(sql, useful, reviewId);
     }
 
     private void refreshUseful(Long reviewId) {
@@ -140,8 +108,6 @@ public class ReviewJdbcStorage extends BaseRepository<Review> implements ReviewR
             updateUseful(reviewId, likes - dislikes);
         } catch (EmptyResultDataAccessException e) {
             updateUseful(reviewId, 0);
-        } catch (Exception e) {
-            throw new InternalServerException(e.getMessage());
         }
     }
 }

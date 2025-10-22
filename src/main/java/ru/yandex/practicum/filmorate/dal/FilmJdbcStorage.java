@@ -1,16 +1,12 @@
 package ru.yandex.practicum.filmorate.dal;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -275,15 +271,6 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 return findMany(sql, param, param);
             }
         }
-    }
-
-    private boolean isGenre(int genreId) {
-        try {
-            jdbcTemplate.queryForObject("SELECT COUNT(*) FROM genres WHERE genre_id = ?", Integer.class, genreId);
-        } catch (EmptyResultDataAccessException e) {
-            return false;
-        }
-        return true;
     }
 
     private List<Film> findFilmsByIds(List<Long> filmsIds) {

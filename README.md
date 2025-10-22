@@ -1,64 +1,78 @@
-# Java-Filmorate
-Template repository for Filmorate project.
+# 🎬 Java-Filmorate
 
-## Описание проекта
+**Template repository for Filmorate project.**
 
-Filmorate - это приложение, которое позволяет пользователям делиться мнениями о фильмах, добавлять друг друга в друзья и
-получать персонализированные рекомендации фильмов на основе лайков.
+## 📖 Описание проекта
 
-## Основной функционал
+Filmorate — это социальная платформа для киноэнтузиастов, где пользователи могут делиться мнениями о фильмах, добавлять друг друга в друзья и получать персонализированные рекомендации на основе своих предпочтений.
 
-### Схема базы данных
+---
+
+## ⚡ Основной функционал
+
+### 🗄️ Схема базы данных
 
 ![schema.png](src/main/resources/schema.png)
 
+### 📊 Структура базы данных
 
-## API Endpoints
+| Таблица | Описание |
+|---------|----------|
+| **USERS** | Пользователи сервиса |
+| **FRIENDS** | Система дружбы между пользователями |
+| **FILMS** | Каталог фильмов |
+| **DIRECTORS** | Режиссёры |
+| **FILM_DIRECTORS** | Связь фильмов и режиссёров |
+| **GENRES** | Жанры фильмов |
+| **FILM_GENRES** | Связь фильмов и жанров |
+| **FILM_LIKES** | Лайки пользователей |
+| **MPA_RATINGS** | Рейтинги MPA |
+| **REVIEWS** | Отзывы пользователей |
+| **REVIEW_LIKES_DISLIKES** | Оценки отзывов |
+| **EVENTS** | Лента событий |
 
-### Пользователи
-- `POST /users` - создание пользователя
-- `PUT /users` - обновление пользователя
-- `GET /users` - получение всех пользователей
-- `GET /users/{id}` - получение пользователя по ID
-- `PUT /users/{id}/friends/{friendId}` - добавление в друзья
-- `DELETE /users/{id}/friends/{friendId}` - удаление из друзей
-- `GET /users/{id}/friends` - список друзей пользователя
-- `GET /users/{id}/friends/common/{otherId}` - список общих друзей
+---
 
-### Фильмы
-- `POST /films` - создание фильма
-- `PUT /films` - обновление фильма
-- `GET /films` - получение всех фильмов
-- `GET /films/{id}` - получение фильма по ID
-- `PUT /films/{id}/like/{userId}` - поставить лайк фильму
-- `DELETE /films/{id}/like/{userId}` - удалить лайк у фильма
-- `GET /films/popular?count={count}` - топ фильмов по количеству лайков
+## 👥 КОМАНДА РАЗРАБОТКИ
 
-## Примеры SQL-запросов для основных операций
+### 💬 **Функциональность «Отзывы»**
+- **👨‍💻 Айнур Шарипов**  
+  `GitHub: adsbvb`  
+  `Email: adsbvb@yandex.ru`
 
-### Получение всех фильмов
-```sql 
-SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa
-FROM films f
-LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id"
-```  
+### 🧠 **Функциональность «Рекомендации»**
+- **👨‍💻 Айнур Шарипов**  
+  `GitHub: adsbvb`  
+  `Email: adsbvb@yandex.ru`
 
-### Получение всех пользователей
-```sql
-SELECT *
-FROM users;
-```
+### 🎭 **Добавление режиссёров в фильмы**
+- **👨‍💻 Александр Рыжаков**  
+  `GitHub: RyzhakovAleksandr`  
+  `Email: rjizhakov@yandex.ru`
 
-### Получение списка общих друзей
-```sql
-SELECT u.* 
-FROM users u 
-WHERE u.id IN (
-        SELECT f1.friend_id 
-        FROM friends f1 
-        WHERE f1.user_id = ?) 
-    AND u.id IN (
-        SELECT f2.friend_id 
-        FROM friends f2 
-        WHERE f2.user_id = ?);
-```
+### 🔍 **Функциональность «Поиск»**
+- **👨‍💻 Данил Ширыкалов**  
+  `GitHub: puffpundb`  
+  `Email: shirds@yandex.ru`
+
+### 🎯 **Функциональность «Общие фильмы»**
+- **👨‍💻 Данил Ширыкалов**  
+  `GitHub: puffpundb`  
+  `Email: shirds@yandex.ru`
+
+### 📈 **Популярные фильмы по жанру и годам**
+- **👨‍💻 Никита**  
+  `GitHub: N1k1337228`  
+  `Email: n1kbutov@yandex.ru`
+
+### 📝 **Функциональность «Лента событий»**
+- **👨‍💻 Никита**  
+  `GitHub: N1k1337228`  
+  `Email: n1kbutov@yandex.ru`
+
+### 🗑️ **Удаление фильмов и пользователей**
+- **👨‍💻 Владислав Дидовец**  
+  `GitHub: Gospod9boga`  
+  `Email: didall5@yandex.ru`
+
+---
