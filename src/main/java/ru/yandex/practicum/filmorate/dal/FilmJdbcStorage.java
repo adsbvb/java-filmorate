@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 
@@ -125,26 +126,24 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     @Override
     public List<Film> getPopular(Integer genreId, Integer year, int count) {
         StringBuilder sql = new StringBuilder("""
-                SELECT
-                        f.id,
-                        f.name,
-                        f.description,
-                        f.release_date,
-                        f.duration,
-                        f.mpa_id,
-                        m.name as mpa_name,
-                        COUNT(l.user_id) AS likes_count
-                    FROM films f
-                    LEFT JOIN film_likes l ON f.id = l.film_id
-                    LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
-                """);
+        SELECT
+            f.id,
+            f.name,
+            f.description,
+            f.release_date,
+            f.duration,
+            f.mpa_id,
+            m.name as mpa_name,
+            COUNT(fl.user_id) AS likes_count
+        FROM films f
+        LEFT JOIN film_likes fl ON f.id = fl.film_id
+        LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
+        LEFT JOIN film_genres fg ON f.id = fg.film_id
+        LEFT JOIN genres g ON fg.genre_id = g.genre_id
+        WHERE 1=1
+        """);
+
         List<Object> params = new ArrayList<>();
-
-        if (genreId != null && genreId > 0) {
-            sql.append(" INNER JOIN film_genres fg ON f.id = fg.film_id");
-        }
-
-        sql.append(" WHERE 1=1");
 
         if (genreId != null && genreId > 0) {
             sql.append(" AND fg.genre_id = ?");
@@ -155,13 +154,17 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
             sql.append(" AND EXTRACT(YEAR FROM f.release_date) = ?");
             params.add(year);
         }
-        sql.append(" GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name");
-        sql.append(" ORDER BY likes_count DESC, f.id ASC");
 
+        sql.append(" GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name");
+        sql.append(" ORDER BY COUNT(fl.user_id) DESC, f.id ASC");
         sql.append(" LIMIT ?");
         params.add(count);
 
+        log.info("Executing popular films query: {}", sql.toString());
+        log.info("With params: {}", params);
+
         List<Film> result = jdbcTemplate.query(sql.toString(), mapper, params.toArray());
+        log.info("Found {} popular films", result.size());
         return result;
     }
 
