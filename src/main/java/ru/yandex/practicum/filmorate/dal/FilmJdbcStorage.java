@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.dal;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -13,10 +14,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class FilmJdbcStorage extends BaseRepository<Film> implements FilmRepository {
-    private static final String FIND_BY_ID_QUERY = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa " +
+    private static final String FIND_BY_ID_QUERY = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
             "FROM films f " + "LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id " + "WHERE f.id = ?";
-    private static final String FIND_ALL_QUERY = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa " +
+    private static final String FIND_ALL_QUERY = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name " +
             "FROM films f " + "LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id";
     private static final String INSERT_QUERY = "INSERT INTO films (name, description, release_date, duration, mpa_id) " + "VALUES (?, ?, ?, ?, ?)";
     private static final String UPDATE_QUERY = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE id = ?";
@@ -25,12 +27,12 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     private static final String DELETE_LIKES_QUERY = "DELETE FROM film_likes WHERE film_id = ? and user_id = ?";
 
     private static final String FIND_COMMON_FILM_QUERY = """
-            SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+            SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name
             FROM films f
             JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
             JOIN (SELECT film_id, COUNT(user_id) AS like_count
-                FROM film_likes
-                GROUP BY film_id) fl ON f.id = fl.film_id
+            FROM film_likes
+            GROUP BY film_id) fl ON f.id = fl.film_id
             WHERE f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?)
             AND f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?)
             ORDER BY fl.like_count DESC
@@ -97,6 +99,13 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
 
     @Override
     public boolean addLike(Long filmId, Long userId) {
+        String checkSql = "SELECT COUNT(*) FROM film_likes WHERE film_id = ? AND user_id = ?";
+        Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, filmId, userId);
+
+        if (count != null && count > 0) {
+            log.info("Лайк пользователя {} фильму {} уже существует", userId, filmId);
+            return true;
+        }
         return update(
                 INSERT_FILM_LIKES_QUERY,
                 filmId,
@@ -114,28 +123,26 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
     }
 
     @Override
-    public List<Film> getPopular(Integer genreId, Integer year, int count) {
+    public List<Film> getPopular(int count, Integer genreId, Integer year) {
         StringBuilder sql = new StringBuilder("""
-                SELECT
-                        f.id,
-                        f.name,
-                        f.description,
-                        f.release_date,
-                        f.duration,
-                        f.mpa_id,
-                        m.name as mpa_name,
-                        COUNT(l.user_id) AS likes_count
-                    FROM films f
-                    LEFT JOIN film_likes l ON f.id = l.film_id
-                    LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
-                """);
+        SELECT
+            f.id,
+            f.name,
+            f.description,
+            f.release_date,
+            f.duration,
+            f.mpa_id,
+            m.name as mpa_name,
+            COUNT(fl.user_id) AS likes_count
+        FROM films f
+        LEFT JOIN film_likes fl ON f.id = fl.film_id
+        LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
+        LEFT JOIN film_genres fg ON f.id = fg.film_id
+        LEFT JOIN genres g ON fg.genre_id = g.genre_id
+        WHERE 1=1
+        """);
+
         List<Object> params = new ArrayList<>();
-
-        if (genreId != null && genreId > 0) {
-            sql.append(" INNER JOIN film_genres fg ON f.id = fg.film_id");
-        }
-
-        sql.append(" WHERE 1=1");
 
         if (genreId != null && genreId > 0) {
             sql.append(" AND fg.genre_id = ?");
@@ -146,13 +153,17 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
             sql.append(" AND EXTRACT(YEAR FROM f.release_date) = ?");
             params.add(year);
         }
-        sql.append(" GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name");
-        sql.append(" ORDER BY likes_count DESC, f.id ASC");
 
+        sql.append(" GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name");
+        sql.append(" ORDER BY COUNT(fl.user_id) DESC, f.id ASC");
         sql.append(" LIMIT ?");
         params.add(count);
 
+        log.info("Executing popular films query: {}", sql);
+        log.info("With params: {}", params);
+
         List<Film> result = jdbcTemplate.query(sql.toString(), mapper, params.toArray());
+        log.info("Found {} popular films", result.size());
         return result;
     }
 
@@ -172,11 +183,11 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                             f.release_date,
                             f.duration,
                             f.mpa_id,
-                            m.name
+                            m.name AS mpa_name
                         FROM films f
                         LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
                         LEFT JOIN film_likes l ON f.id = l.film_id
-                        WHERE f.name LIKE ?
+                        WHERE LOWER(f.name) LIKE LOWER(?)
                         GROUP BY f.id,
                             f.name,
                             f.description,
@@ -197,13 +208,13 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                             f.release_date,
                             f.duration,
                             f.mpa_id,
-                            m.name
+                            m.name AS mpa_name
                         FROM films f
                         LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
                         LEFT JOIN film_likes l ON f.id = l.film_id
                         LEFT JOIN film_directors fd ON f.id = fd.film_id
                         LEFT JOIN directors d ON d.director_id = fd.director_id
-                        WHERE d.director_name LIKE ?
+                        WHERE LOWER(d.director_name) LIKE LOWER(?)
                         GROUP BY f.id,
                             f.name,
                             f.description,
@@ -216,7 +227,27 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 String directorName = "%" + query + "%";
                 return findMany(sql, directorName);
             }
-			default -> {
+            case "title,director", "director,title" -> {
+                String sql = """
+                        SELECT DISTINCT f.id,
+                            f.name,
+                            f.description,
+                            f.release_date,
+                            f.duration,
+                            f.mpa_id,
+                            m.name AS mpa_name
+                        FROM films f
+                        LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
+                        LEFT JOIN film_likes l ON f.id = l.film_id
+                        LEFT JOIN film_directors fd ON f.id = fd.film_id
+                        LEFT JOIN directors d ON d.director_id = fd.director_id
+                        WHERE LOWER(d.director_name) LIKE LOWER(?) OR LOWER(f.name) LIKE LOWER(?)
+                        ORDER BY f.id DESC
+                        """;
+                String param = "%" + query.toLowerCase() + "%";
+                return findMany(sql, param, param);
+            }
+            default -> {
                 String sql = """
                         SELECT f.id,
                             f.name,
@@ -224,13 +255,13 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                             f.release_date,
                             f.duration,
                             f.mpa_id,
-                            m.name
+                            m.name AS mpa_name
                         FROM films f
                         LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id
                         LEFT JOIN film_likes l ON f.id = l.film_id
                         LEFT JOIN film_directors fd ON f.id = fd.film_id
                         LEFT JOIN directors d ON d.director_id = fd.director_id
-                        WHERE d.director_name LIKE ? OR f.name LIKE ?
+                        WHERE LOWER(d.director_name) LIKE LOWER(?) OR LOWER(f.name) LIKE LOWER(?)
                         GROUP BY f.id,
                             f.name,
                             f.description,
@@ -243,7 +274,7 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
                 String param = "%" + query + "%";
                 return findMany(sql, param, param);
             }
-		}
+        }
     }
 
     private boolean isGenre(int genreId) {
@@ -260,7 +291,10 @@ public class FilmJdbcStorage extends BaseRepository<Film> implements FilmReposit
             return Collections.emptyList();
         }
         String sql = String.format(
-                "SELECT * FROM films WHERE id IN (%s)",
+                "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                        "f.mpa_id, m.name AS mpa_name " +
+                        "FROM films f LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id " +
+                        "WHERE f.id IN (%s)",
                 filmsIds.stream()
                         .map(String::valueOf)
                         .collect(Collectors.joining(","))

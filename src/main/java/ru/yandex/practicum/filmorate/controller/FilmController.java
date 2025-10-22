@@ -58,7 +58,7 @@ public class FilmController {
                                     @RequestParam(required = false) @Min(value = 1895,
                                             message = "Фильм должен быть выпущен после 1895") Integer year) {
         log.info("Получен запрос на получение списка популярных фильмов ТОП-{}", count);
-        return filmService.getPopularFilms(count,genreId, year);
+        return filmService.getPopularFilms(count, genreId, year);
     }
 
     @PutMapping("/{film_id}/like/{id}")
@@ -68,7 +68,7 @@ public class FilmController {
     }
 
     @DeleteMapping("/{film_id}/like/{id}")
-    public boolean removeLike(@PathVariable("film_id") @Positive Long filmId, @PathVariable("id") @Positive Long userId) {
+    public boolean removeLike(@PathVariable("film_id") Long filmId, @PathVariable("id") Long userId) {
         log.info("Получен запрос на удаление лайка у фильма {} от пользователя {}", filmId, userId);
         return filmService.removeLike(filmId, userId);
     }

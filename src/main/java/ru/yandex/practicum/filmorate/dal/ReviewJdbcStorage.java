@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.dal;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -12,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
+@Slf4j
 public class ReviewJdbcStorage extends BaseRepository<Review> implements ReviewRepository {
     public ReviewJdbcStorage(JdbcTemplate jdbcTemplate, RowMapper<Review> mapper) {
         super(jdbcTemplate, mapper);
@@ -19,7 +21,7 @@ public class ReviewJdbcStorage extends BaseRepository<Review> implements ReviewR
 
     @Override
     public Optional<Review> findById(Long id) {
-        String sql = "SELECT * FROM reviews WHERE review_id = ?";
+        String sql = "SELECT * FROM reviews WHERE review_id = ? ORDER BY review_id ASC";
         try {
             return findOne(sql, id);
         } catch (InternalServerException e) {
@@ -40,6 +42,7 @@ public class ReviewJdbcStorage extends BaseRepository<Review> implements ReviewR
                     review.getFilmId(),
                     review.getUseful()
             );
+            log.info("Generated review_id: {}", reviewId);
             review.setReviewId(reviewId);
             return review;
         } catch (InternalServerException e) {
@@ -83,7 +86,7 @@ public class ReviewJdbcStorage extends BaseRepository<Review> implements ReviewR
             if (filmId != null) {
                 sql.append(" WHERE film_id = ?");
             }
-            sql.append(" ORDER BY review_id DESC LIMIT ?");
+            sql.append(" ORDER BY useful DESC, review_id ASC LIMIT ?");
             if (filmId != null) {
                 return jdbcTemplate.query(sql.toString(), new Object[]{filmId, limit}, mapper);
             } else {
@@ -131,7 +134,7 @@ public class ReviewJdbcStorage extends BaseRepository<Review> implements ReviewR
                 "SUM(CASE WHEN is_like THEN 0 ELSE 1 END) AS dislikes " +
                 "FROM review_likes_dislikes WHERE review_id = ?";
         try {
-            Map<String, Object> result = jdbcTemplate.queryForMap(sql,reviewId);
+            Map<String, Object> result = jdbcTemplate.queryForMap(sql, reviewId);
             int likes = result.get("likes") != null ? ((Number) result.get("likes")).intValue() : 0;
             int dislikes = result.get("dislikes") != null ? ((Number) result.get("dislikes")).intValue() : 0;
             updateUseful(reviewId, likes - dislikes);

@@ -3,12 +3,10 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.dal.EventRepository;
-import ru.yandex.practicum.filmorate.dal.FilmJdbcStorage;
+import ru.yandex.practicum.filmorate.dal.*;
 import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.NewUserRequest;
 import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
-import ru.yandex.practicum.filmorate.dal.UserJdbcStorage;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
@@ -28,12 +26,21 @@ public class UserService {
     private final UserJdbcStorage userJdbcStorage;
     private final FilmJdbcStorage filmJdbcStorage;
     private final EventRepository eventRepository;
+    private final GenreJdbcStorage genreJdbcStorage;
+    private final MpaJdbcStorage mpaJdbcStorage;
+    private final FilmDirectorRepository filmDirectorRepository;
 
     @Autowired
-    public UserService(UserJdbcStorage userJdbcStorage, FilmJdbcStorage filmJdbcStorage, EventRepository eventRepository) {
+    public UserService(UserJdbcStorage userJdbcStorage, FilmJdbcStorage filmJdbcStorage, EventRepository eventRepository,
+                       GenreJdbcStorage genreJdbcStorage,
+                       MpaJdbcStorage mpaJdbcStorage,
+                       FilmDirectorRepository filmDirectorRepository) {
         this.userJdbcStorage = userJdbcStorage;
         this.filmJdbcStorage = filmJdbcStorage;
         this.eventRepository = eventRepository;
+        this.genreJdbcStorage = genreJdbcStorage;
+        this.mpaJdbcStorage = mpaJdbcStorage;
+        this.filmDirectorRepository = filmDirectorRepository;
     }
 
     public UserDto getUserById(Long userId) {
@@ -141,6 +148,13 @@ public class UserService {
     public List<FilmDto> getRecommendations(Long id) {
         log.info("Получения списка рекомендаций фильмов для просмотра для пользователя с id: {}", id);
         List<Film> recommendations = filmJdbcStorage.getRecommendations(id);
+        if (!recommendations.isEmpty()) {
+            recommendations = genreJdbcStorage.getGenresByFilms(recommendations);
+            recommendations.forEach(film -> {
+                mpaJdbcStorage.loadFilmMpa(film);
+                filmDirectorRepository.loadFilmDirectors(film);
+            });
+        }
         log.info("Фильмов рекомендовано: {}", recommendations.size());
         return recommendations.stream()
                 .map(FilmMapper::mapToFilmDto)
@@ -154,6 +168,11 @@ public class UserService {
     }
 
     private User getUserOrThrow(Long userId) {
+        if (userId == null || userId <= 0) {
+            log.warn("Запрошен невалидный ID пользователя: {}", userId);
+            throw new NotFoundException("Пользователь не найден с id: " + userId);
+        }
+
         return userJdbcStorage.findById(userId).orElseThrow(() -> {
             log.warn("Пользователь не найден с id: {}", userId);
             return new NotFoundException("Пользователь не найден с id: " + userId);

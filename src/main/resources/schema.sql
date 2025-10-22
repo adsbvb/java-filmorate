@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS events (
     user_id BIGINT NOT NULL,
     event_type VARCHAR(20) NOT NULL,
     operation VARCHAR(25) NOT NULL,
-    entity_id INTEGER NOT NULL,
+    entity_id BIGINT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

@@ -4,11 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dal.EventRepository;
+import ru.yandex.practicum.filmorate.dal.FilmJdbcStorage;
 import ru.yandex.practicum.filmorate.dal.ReviewRepository;
+import ru.yandex.practicum.filmorate.dal.UserJdbcStorage;
 import ru.yandex.practicum.filmorate.dto.NewReviewRequest;
 import ru.yandex.practicum.filmorate.dto.ReviewDto;
 import ru.yandex.practicum.filmorate.dto.UpdateReviewRequest;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.ReviewMapper;
 import ru.yandex.practicum.filmorate.model.Review;
 
@@ -19,16 +22,31 @@ import java.util.List;
 public class ImplReviewService implements ReviewService {
     private final ReviewRepository reviewJdbcStorage;
     private final EventRepository eventRepository;
+    private final UserJdbcStorage userJdbcStorage;
+    private final FilmJdbcStorage filmJdbcStorage;
 
     @Autowired
-    public ImplReviewService(ReviewRepository reviewJdbcStorage, EventRepository eventRepository) {
+    public ImplReviewService(ReviewRepository reviewJdbcStorage, EventRepository eventRepository,
+                             UserJdbcStorage userJdbcStorage, FilmJdbcStorage filmJdbcStorage) {
         this.reviewJdbcStorage = reviewJdbcStorage;
         this.eventRepository = eventRepository;
+        this.userJdbcStorage = userJdbcStorage;
+        this.filmJdbcStorage = filmJdbcStorage;
     }
 
     @Override
     public ReviewDto addReview(NewReviewRequest request) {
         log.info("Add new review: {}", request);
+
+        userJdbcStorage.findById(request.getUserId())
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + request.getUserId()));
+        filmJdbcStorage.findById(request.getFilmId())
+                .orElseThrow(() -> new NotFoundException("Film not found with id: " + request.getFilmId()));
+
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+            throw new ValidationException("Content cannot be empty");
+        }
+
         Review review = ReviewMapper.mapToReview(request);
         review.setUseful(0);
         review = reviewJdbcStorage.addReview(review);
@@ -43,14 +61,17 @@ public class ImplReviewService implements ReviewService {
         Review updatedReview = reviewJdbcStorage.findById(request.getReviewId())
                 .map(review -> {
                     log.debug("Updating review fields: {}", review);
-                    return ReviewMapper.updateReviewFields(review, request);
+                    Long userId = review.getUserId();
+                    Review updated = ReviewMapper.updateReviewFields(review, request);
+                    updated.setUserId(userId);
+                    return updated;
                 })
                 .orElseThrow(() -> {
                     log.warn("Review with id {} not found for update", request.getReviewId());
                     return new NotFoundException("Not found for update review with id {}: " + request.getReviewId());
                 });
         updatedReview = reviewJdbcStorage.updateReview(updatedReview);
-        eventRepository.addEvent(request.getUserId(), "REVIEW", "UPDATE", updatedReview.getReviewId());
+        eventRepository.addEvent(updatedReview.getUserId(), "REVIEW", "UPDATE", updatedReview.getReviewId());
         log.info("Review with id {} updated successfully", updatedReview.getReviewId());
         return ReviewMapper.mapToReviewDto(updatedReview);
     }
