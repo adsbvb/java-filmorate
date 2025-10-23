@@ -96,4 +96,10 @@ public class UserJdbcStorage extends BaseRepository<User> implements UserStorage
     public List<User> getCommonFriends(Long userId1, Long userId2) {
         return findMany(FIND_COMMON_FRIENDS_QUERY, userId1, userId2);
     }
+
+    @Override
+    public void deleteById(Long id) {
+        String sql = "DELETE FROM users WHERE id = ?";
+        jdbcTemplate.update(sql, id);
+    }
 }

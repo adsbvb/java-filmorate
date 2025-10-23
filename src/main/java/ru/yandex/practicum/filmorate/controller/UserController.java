@@ -7,9 +7,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.NewUserRequest;
+import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.*;
@@ -50,7 +53,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}/friends/{friend_id}")
-    public void addFriend(@PathVariable("id") @Positive Long userId, @PathVariable("friend_id") @Positive Long friendId) {
+    public void addFriend(@PathVariable("id") Long userId, @PathVariable("friend_id") Long friendId) {
         log.info("Получен запрос на добавление пользователя {} в друзья к пользователю {}", friendId, userId);
         userService.addFriend(userId, friendId);
     }
@@ -73,5 +76,25 @@ public class UserController {
     public List<UserDto> getCommonFriends(@PathVariable("id") @Positive Long userId, @PathVariable("other_id") @Positive Long otherUserId) {
         log.info("Получен запрос на получение списка общих друзей пользователя {} и {}", userId, otherUserId);
         return userService.getCommonFriends(userId, otherUserId);
+    }
+
+    @GetMapping("/{id}/feed")
+    public List<Event> getFeed(@PathVariable("id") @Positive Long userId) {
+        log.info("Получен запрос на получение списка событий пользователя {} ", userId);
+        return userService.getFeed(userId);
+    }
+
+    @GetMapping("/{id}/recommendations")
+    @ResponseStatus(HttpStatus.OK)
+    public List<FilmDto> getRecommendations(@PathVariable("id") @Positive Long userId) {
+        log.info("Получен запрос на получения рекомендации фильмов для просмотра для пользователя с id: {}", userId);
+        return userService.getRecommendations(userId);
+    }
+
+    @DeleteMapping("/{user_id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable("user_id") @Positive Long userId) {
+        log.info("Получен запрос на удаление пользователя с id: {}", userId);
+        userService.deleteById(userId);
     }
 }

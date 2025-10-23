@@ -7,6 +7,10 @@ import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import java.util.Collections;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FilmMapper {
     public static Film mapToFilm(NewFilmRequest request) {
@@ -18,6 +22,7 @@ public class FilmMapper {
         film.setGenres(request.getGenres());
         film.setMpa(request.getMpa());
         film.setGenres(request.getGenres());
+
         return film;
     }
 
@@ -30,6 +35,12 @@ public class FilmMapper {
         dto.setDuration(film.getDuration());
         dto.setGenres(film.getGenres());
         dto.setMpa(film.getMpa());
+        dto.setDirectors(Optional.ofNullable(film.getDirectors())
+                .orElse(Collections.emptySet())
+                .stream()
+                .map(DirectorMapper::toDirectorDto)
+                .collect(Collectors.toSet()));
+
         return dto;
     }
 
@@ -52,7 +63,10 @@ public class FilmMapper {
         if (request.hasMpa()) {
             film.setMpa(request.getMpa());
         }
-       return film;
+        if (request.hasDirectors()) {
+            film.setDirectors(request.getDirectors());
+        }
+        return film;
     }
 
 }
